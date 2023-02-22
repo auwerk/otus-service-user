@@ -4,6 +4,7 @@ import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Vertx;
 import org.auwerk.otus.arch.userservice.dao.UserProfileDao;
 import org.auwerk.otus.arch.userservice.domain.UserProfile;
+import org.auwerk.otus.arch.userservice.mapper.UserProfileMapper;
 import org.auwerk.otus.arch.userservice.service.UserService;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.keycloak.admin.client.Keycloak;
@@ -36,8 +37,14 @@ public class UserServiceImpl implements UserService {
     private Uni<UserProfile> createUserInKeycloak(UserProfile profile) {
         return vertx.getOrCreateContext().executeBlocking(
                 Uni.createFrom().emitter(emitter -> {
+                    final var userRepresentation = new UserRepresentation();
+                    userRepresentation.setEnabled(true);
+                    userRepresentation.setEmailVerified(true);
+
+                    UserProfileMapper.INSTANCE.updateUserRepresentationFromProfile(profile, userRepresentation);
+
                     final var response = keycloak.realm(keycloakRealm).users()
-                            .create(profileToRepresentation(profile));
+                            .create(userRepresentation);
 
                     if (response.getStatus() == 201) {
                         emitter.complete(profile);
@@ -45,16 +52,5 @@ public class UserServiceImpl implements UserService {
                         emitter.fail(new Exception("failed to create user in keycloak"));
                     }
                 }));
-    }
-
-    private static UserRepresentation profileToRepresentation(UserProfile profile) {
-        final var userRepresentation = new UserRepresentation();
-        userRepresentation.setUsername(profile.getUserName());
-        userRepresentation.setEmail(profile.getEmail());
-        userRepresentation.setEnabled(true);
-        userRepresentation.setEmailVerified(true);
-        userRepresentation.setFirstName(profile.getFirstName());
-        userRepresentation.setLastName(profile.getLastName());
-        return userRepresentation;
     }
 }
