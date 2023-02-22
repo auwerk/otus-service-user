@@ -3,6 +3,7 @@ package org.auwerk.otus.arch.userservice.api;
 import io.smallrye.mutiny.Uni;
 import org.auwerk.otus.arch.userservice.api.dto.RegisterUserRequestDto;
 import org.auwerk.otus.arch.userservice.domain.UserProfile;
+import org.auwerk.otus.arch.userservice.mapper.UserProfileMapper;
 import org.auwerk.otus.arch.userservice.service.UserService;
 
 import javax.inject.Inject;
@@ -22,12 +23,7 @@ public class UserResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Uni<Response> registerUser(RegisterUserRequestDto requestDto) {
-        final var profile = new UserProfile();
-        profile.setUserName(requestDto.getUserName());
-        profile.setEmail(requestDto.getEmail());
-        profile.setFirstName(requestDto.getFirstName());
-        profile.setLastName(requestDto.getLastName());
-        profile.setBirthDate(requestDto.getBirthDate());
+        final var profile = UserProfileMapper.INSTANCE.fromRegisterUserRequestDto(requestDto);
 
         return userService.createUser(profile)
                 .onItem().transform(userId -> Response.created(URI.create("/user/" + userId)).build());
