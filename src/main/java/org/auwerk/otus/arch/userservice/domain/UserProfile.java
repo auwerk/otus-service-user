@@ -1,15 +1,12 @@
-package org.auwerk.otus.arch.userservice.api.dto;
+package org.auwerk.otus.arch.userservice.domain;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class RegisterUserRequestDto {
+public class UserProfile {
+    private Long id;
     private String userName;
     private String email;
     private String firstName;
