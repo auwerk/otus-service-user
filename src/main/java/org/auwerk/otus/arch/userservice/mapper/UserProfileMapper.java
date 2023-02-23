@@ -1,5 +1,6 @@
 package org.auwerk.otus.arch.userservice.mapper;
 
+import org.auwerk.otus.arch.userservice.api.dto.PublicProfileResponseDto;
 import org.auwerk.otus.arch.userservice.api.dto.RegisterUserRequestDto;
 import org.auwerk.otus.arch.userservice.domain.UserProfile;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -14,6 +15,8 @@ public interface UserProfileMapper {
     UserProfileMapper INSTANCE = Mappers.getMapper(UserProfileMapper.class);
 
     UserProfile fromRegisterUserRequestDto(RegisterUserRequestDto dto);
+
+    PublicProfileResponseDto toPublicProfileResponseDto(UserProfile profile);
 
     @Mapping(target = "username", source = "userName")
     void updateUserRepresentationFromProfile(UserProfile profile, @MappingTarget UserRepresentation userRepresentation);

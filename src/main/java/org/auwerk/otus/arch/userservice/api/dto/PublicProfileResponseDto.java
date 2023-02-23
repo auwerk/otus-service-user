@@ -9,11 +9,9 @@ import java.time.LocalDate;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class RegisterUserRequestDto {
+public class PublicProfileResponseDto {
     private String userName;
-    private String email;
     private String firstName;
     private String lastName;
     private LocalDate birthDate;
-    private Integer phoneNumber;
 }

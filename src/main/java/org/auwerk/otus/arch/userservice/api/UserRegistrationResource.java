@@ -9,18 +9,20 @@ import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
 
 @Path("/register")
+@Consumes(MediaType.APPLICATION_JSON)
 public class UserRegistrationResource {
 
     @Inject
     UserService userService;
 
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.TEXT_PLAIN)
     public Uni<Response> registerUser(RegisterUserRequestDto requestDto) {
         final var profile = UserProfileMapper.INSTANCE.fromRegisterUserRequestDto(requestDto);
 

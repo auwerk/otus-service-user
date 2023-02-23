@@ -21,4 +21,10 @@
         </createTable>
     </changeSet>
 
+    <changeSet id="add-column-user_profiles-phone_number" author="auwerk">
+        <addColumn tableName="user_profiles">
+            <column name="phone_number" type="number"/>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>
