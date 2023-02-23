@@ -2,7 +2,6 @@ package org.auwerk.otus.arch.userservice.api;
 
 import io.smallrye.mutiny.Uni;
 import org.auwerk.otus.arch.userservice.api.dto.RegisterUserRequestDto;
-import org.auwerk.otus.arch.userservice.domain.UserProfile;
 import org.auwerk.otus.arch.userservice.mapper.UserProfileMapper;
 import org.auwerk.otus.arch.userservice.service.UserService;
 
@@ -14,8 +13,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
 
-@Path("/user")
-public class UserResource {
+@Path("/register")
+public class UserRegistrationResource {
 
     @Inject
     UserService userService;

@@ -11,7 +11,7 @@ import org.mockito.Mockito;
 import static io.restassured.RestAssured.given;
 
 @QuarkusTest
-public class UserResourceTest {
+public class UserRegistrationResourceTest {
 
     @InjectMock
     UserService userService;
@@ -25,7 +25,7 @@ public class UserResourceTest {
                 .header("Content-Type", "application/json")
                 .body("{}")
                 .when()
-                .post("/user")
+                .post("/register")
                 .then()
                 .statusCode(201);
     }
