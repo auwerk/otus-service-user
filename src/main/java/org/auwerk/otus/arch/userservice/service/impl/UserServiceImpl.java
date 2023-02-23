@@ -6,6 +6,7 @@ import org.auwerk.otus.arch.userservice.dao.UserProfileDao;
 import org.auwerk.otus.arch.userservice.domain.UserProfile;
 import org.auwerk.otus.arch.userservice.mapper.UserProfileMapper;
 import org.auwerk.otus.arch.userservice.service.UserService;
+import org.auwerk.otus.arch.userservice.service.exception.KeycloakIntegrationException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -31,7 +32,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public Uni<Long> createUser(UserProfile profile) {
         return createUserInKeycloak(profile)
-                .onItem().transformToUni(p -> userProfileDao.insert(p));
+                .onItem().transformToUni(userProfileDao::insert);
     }
 
     private Uni<UserProfile> createUserInKeycloak(UserProfile profile) {
@@ -42,14 +43,14 @@ public class UserServiceImpl implements UserService {
                     userRepresentation.setEmailVerified(true);
 
                     UserProfileMapper.INSTANCE.updateUserRepresentationFromProfile(profile, userRepresentation);
-
+                    
                     final var response = keycloak.realm(keycloakRealm).users()
                             .create(userRepresentation);
 
                     if (response.getStatus() == 201) {
                         emitter.complete(profile);
                     } else {
-                        emitter.fail(new Exception("failed to create user in keycloak"));
+                        emitter.fail(new KeycloakIntegrationException(response.getStatus()));
                     }
                 }));
     }
