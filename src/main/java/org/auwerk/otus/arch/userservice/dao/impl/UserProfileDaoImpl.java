@@ -53,7 +53,7 @@ public class UserProfileDaoImpl implements UserProfileDao {
                     if (rows.iterator().hasNext()) {
                         return mapRow(rows.iterator().next());
                     } else {
-                        throw new UserProfileNotFoundException(0L);
+                        throw new UserProfileNotFoundException(userName);
                     }
                 }));
     }

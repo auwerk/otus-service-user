@@ -6,9 +6,18 @@ public class UserProfileNotFoundException extends Exception {
 
     @Getter
     private final Long userId;
+    @Getter
+    private final String userName;
 
     public UserProfileNotFoundException(Long userId) {
         super("user profile not found, id=" + userId);
         this.userId = userId;
+        this.userName = null;
+    }
+
+    public UserProfileNotFoundException(String userName) {
+        super("user profile not found, userName=" + userName);
+        this.userId = null;
+        this.userName = userName;
     }
 }
