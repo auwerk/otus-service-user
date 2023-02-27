@@ -1,8 +1,11 @@
 package org.auwerk.otus.arch.userservice.api;
 
+import io.quarkus.security.Authenticated;
 import io.smallrye.mutiny.Uni;
 import org.auwerk.otus.arch.userservice.dao.UserProfileDao;
 import org.auwerk.otus.arch.userservice.mapper.UserProfileMapper;
+import org.auwerk.otus.arch.userservice.service.UserService;
+import org.jboss.resteasy.reactive.NoCache;
 import org.jboss.resteasy.reactive.RestPath;
 
 import javax.inject.Inject;
@@ -20,9 +23,16 @@ public class UserProfileResource {
     @Inject
     UserProfileDao userProfileDao;
 
+    @Inject
+    UserService userService;
+
     @GET
+    @Authenticated
+    @NoCache
     public Uni<Response> myProfile() {
-        return Uni.createFrom().item(Response.ok().build());
+        return userService.getMyProfile()
+                .onItem().transform(profile ->
+                        Response.ok(UserProfileMapper.INSTANCE.toMyProfileResponseDto(profile)).build());
     }
 
     @GET

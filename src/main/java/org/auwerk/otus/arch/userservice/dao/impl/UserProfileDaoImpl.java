@@ -3,6 +3,7 @@ package org.auwerk.otus.arch.userservice.dao.impl;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.unchecked.Unchecked;
 import io.vertx.mutiny.pgclient.PgPool;
+import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.Tuple;
 import lombok.RequiredArgsConstructor;
 import org.auwerk.otus.arch.userservice.dao.UserProfileDao;
@@ -19,6 +20,7 @@ public class UserProfileDaoImpl implements UserProfileDao {
             + "(username, email, first_name, last_name, birth_date, phone_number) "
             + "VALUES($1, $2, $3, $4, $5, $6) RETURNING id";
     private static final String SQL_SELECT_BY_ID = "SELECT * FROM user_profiles WHERE id=$1";
+    private static final String SQL_SELECT_BY_USERNAME = "SELECT * FROM user_profiles WHERE username=$1";
 
     private final PgPool client;
 
@@ -36,19 +38,35 @@ public class UserProfileDaoImpl implements UserProfileDao {
                 .execute(Tuple.of(id))
                 .onItem().transform(Unchecked.function(rows -> {
                     if (rows.iterator().hasNext()) {
-                        final var row = rows.iterator().next();
-                        final var userProfile = new UserProfile();
-                        userProfile.setId(row.getLong("id"));
-                        userProfile.setUserName(row.getString("username"));
-                        userProfile.setEmail(row.getString("email"));
-                        userProfile.setFirstName(row.getString("first_name"));
-                        userProfile.setLastName(row.getString("last_name"));
-                        userProfile.setBirthDate(row.getLocalDate("birth_date"));
-                        userProfile.setPhoneNumber(row.getInteger("phone_number"));
-                        return userProfile;
+                        return mapRow(rows.iterator().next());
                     } else {
                         throw new UserProfileNotFoundException(id);
                     }
                 }));
+    }
+
+    @Override
+    public Uni<UserProfile> findByUserName(String userName) {
+        return client.preparedQuery(SQL_SELECT_BY_USERNAME)
+                .execute(Tuple.of(userName))
+                .onItem().transform(Unchecked.function(rows -> {
+                    if (rows.iterator().hasNext()) {
+                        return mapRow(rows.iterator().next());
+                    } else {
+                        throw new UserProfileNotFoundException(0L);
+                    }
+                }));
+    }
+
+    private static UserProfile mapRow(Row row) {
+        final var userProfile = new UserProfile();
+        userProfile.setId(row.getLong("id"));
+        userProfile.setUserName(row.getString("username"));
+        userProfile.setEmail(row.getString("email"));
+        userProfile.setFirstName(row.getString("first_name"));
+        userProfile.setLastName(row.getString("last_name"));
+        userProfile.setBirthDate(row.getLocalDate("birth_date"));
+        userProfile.setPhoneNumber(row.getInteger("phone_number"));
+        return userProfile;
     }
 }

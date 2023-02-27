@@ -7,4 +7,6 @@ public interface UserProfileDao {
     Uni<Long> insert(UserProfile profile);
 
     Uni<UserProfile> findById(Long id);
+
+    Uni<UserProfile> findByUserName(String userName);
 }

@@ -1,5 +1,6 @@
 package org.auwerk.otus.arch.userservice.service.impl;
 
+import io.quarkus.security.identity.SecurityIdentity;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Vertx;
 import org.auwerk.otus.arch.userservice.dao.UserProfileDao;
@@ -18,13 +19,15 @@ public class UserServiceImpl implements UserService {
 
     private final Vertx vertx;
     private final Keycloak keycloak;
+    private final SecurityIdentity securityIdentity;
     private final UserProfileDao userProfileDao;
     private final String keycloakRealm;
 
-    public UserServiceImpl(Vertx vertx, Keycloak keycloak, UserProfileDao userProfileDao,
+    public UserServiceImpl(Vertx vertx, Keycloak keycloak, UserProfileDao userProfileDao, SecurityIdentity securityIdentity,
                            @ConfigProperty(name = "otus.service.user.keycloak-realm") String keycloakRealm) {
         this.vertx = vertx;
         this.keycloak = keycloak;
+        this.securityIdentity = securityIdentity;
         this.userProfileDao = userProfileDao;
         this.keycloakRealm = keycloakRealm;
     }
@@ -35,6 +38,11 @@ public class UserServiceImpl implements UserService {
                 .onItem().transformToUni(userProfileDao::insert);
     }
 
+    @Override
+    public Uni<UserProfile> getMyProfile() {
+        return userProfileDao.findByUserName(securityIdentity.getPrincipal().getName());
+    }
+
     private Uni<UserProfile> createUserInKeycloak(UserProfile profile) {
         return vertx.getOrCreateContext().executeBlocking(
                 Uni.createFrom().emitter(emitter -> {
@@ -43,7 +51,7 @@ public class UserServiceImpl implements UserService {
                     userRepresentation.setEmailVerified(true);
 
                     UserProfileMapper.INSTANCE.updateUserRepresentationFromProfile(profile, userRepresentation);
-                    
+
                     final var response = keycloak.realm(keycloakRealm).users()
                             .create(userRepresentation);
 
