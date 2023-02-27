@@ -26,13 +26,16 @@ public class UserProfileResource {
     @Inject
     UserService userService;
 
+    @Inject
+    UserProfileMapper userProfileMapper;
+
     @GET
     @Authenticated
     @NoCache
     public Uni<Response> myProfile() {
         return userService.getMyProfile()
                 .onItem().transform(profile ->
-                        Response.ok(UserProfileMapper.INSTANCE.toMyProfileResponseDto(profile)).build());
+                        Response.ok(userProfileMapper.toMyProfileResponseDto(profile)).build());
     }
 
     @GET
@@ -41,6 +44,6 @@ public class UserProfileResource {
         return userProfileDao.findById(id)
                 .onFailure().transform(throwable -> new WebApplicationException(Response.Status.NOT_FOUND))
                 .onItem().transform(profile ->
-                        Response.ok(UserProfileMapper.INSTANCE.toPublicProfileResponseDto(profile)).build());
+                        Response.ok(userProfileMapper.toPublicProfileResponseDto(profile)).build());
     }
 }

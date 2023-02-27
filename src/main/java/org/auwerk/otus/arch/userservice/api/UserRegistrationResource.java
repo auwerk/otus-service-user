@@ -18,12 +18,13 @@ public class UserRegistrationResource {
     @Inject
     UserService userService;
 
+    @Inject
+    UserProfileMapper userProfileMapper;
+
     @POST
     @Produces(MediaType.TEXT_PLAIN)
     public Uni<Response> registerUser(RegisterUserRequestDto requestDto) {
-        final var profile = UserProfileMapper.INSTANCE.fromRegisterUserRequestDto(requestDto);
-
-        return userService.createUser(profile)
+        return userService.createUser(userProfileMapper.fromRegisterUserRequestDto(requestDto))
                 .onFailure().transform(throwable -> new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR))
                 .onItem().transform(userId -> Response.created(URI.create("/user/" + userId)).build());
     }

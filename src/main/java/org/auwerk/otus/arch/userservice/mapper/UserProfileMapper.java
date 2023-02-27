@@ -8,12 +8,9 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-import org.mapstruct.factory.Mappers;
 
-@Mapper
+@Mapper(componentModel = "cdi")
 public interface UserProfileMapper {
-
-    UserProfileMapper INSTANCE = Mappers.getMapper(UserProfileMapper.class);
 
     UserProfile fromRegisterUserRequestDto(RegisterUserRequestDto dto);
 

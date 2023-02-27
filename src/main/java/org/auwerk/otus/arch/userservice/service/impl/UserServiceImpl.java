@@ -21,14 +21,17 @@ public class UserServiceImpl implements UserService {
     private final Keycloak keycloak;
     private final SecurityIdentity securityIdentity;
     private final UserProfileDao userProfileDao;
+    private final UserProfileMapper userProfileMapper;
     private final String keycloakRealm;
 
-    public UserServiceImpl(Vertx vertx, Keycloak keycloak, UserProfileDao userProfileDao, SecurityIdentity securityIdentity,
+    public UserServiceImpl(Vertx vertx, Keycloak keycloak, SecurityIdentity securityIdentity,
+                           UserProfileDao userProfileDao, UserProfileMapper userProfileMapper,
                            @ConfigProperty(name = "otus.service.user.keycloak-realm") String keycloakRealm) {
         this.vertx = vertx;
         this.keycloak = keycloak;
         this.securityIdentity = securityIdentity;
         this.userProfileDao = userProfileDao;
+        this.userProfileMapper = userProfileMapper;
         this.keycloakRealm = keycloakRealm;
     }
 
@@ -50,7 +53,7 @@ public class UserServiceImpl implements UserService {
                     userRepresentation.setEnabled(true);
                     userRepresentation.setEmailVerified(true);
 
-                    UserProfileMapper.INSTANCE.updateUserRepresentationFromProfile(profile, userRepresentation);
+                    userProfileMapper.updateUserRepresentationFromProfile(profile, userRepresentation);
 
                     final var response = keycloak.realm(keycloakRealm).users()
                             .create(userRepresentation);
