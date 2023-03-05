@@ -24,7 +24,7 @@ public class UserRegistrationResource {
     @POST
     @Produces(MediaType.TEXT_PLAIN)
     public Uni<Response> registerUser(RegisterUserRequestDto requestDto) {
-        return userService.createUser(userProfileMapper.fromRegisterUserRequestDto(requestDto))
+        return userService.createUser(userProfileMapper.fromRegisterUserRequestDto(requestDto), requestDto.getPassword())
                 .onFailure().transform(throwable -> new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR))
                 .onItem().transform(userId -> Response.created(URI.create("/user/" + userId)).build());
     }

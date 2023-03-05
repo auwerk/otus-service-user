@@ -1,5 +1,6 @@
 package org.auwerk.otus.arch.userservice.service.impl;
 
+import io.quarkus.runtime.util.StringUtil;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Vertx;
@@ -10,6 +11,7 @@ import org.auwerk.otus.arch.userservice.service.UserService;
 import org.auwerk.otus.arch.userservice.service.exception.KeycloakIntegrationException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -36,8 +38,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Uni<Long> createUser(UserProfile profile) {
-        return createUserInKeycloak(profile)
+    public Uni<Long> createUser(UserProfile profile, String initialPassword) {
+        return createUserInKeycloak(profile, initialPassword)
                 .onItem().transformToUni(userProfileDao::insert);
     }
 
@@ -46,7 +48,7 @@ public class UserServiceImpl implements UserService {
         return userProfileDao.findByUserName(securityIdentity.getPrincipal().getName());
     }
 
-    private Uni<UserProfile> createUserInKeycloak(UserProfile profile) {
+    private Uni<UserProfile> createUserInKeycloak(UserProfile profile, String initialPassword) {
         return vertx.getOrCreateContext().executeBlocking(
                 Uni.createFrom().emitter(emitter -> {
                     final var userRepresentation = new UserRepresentation();
@@ -59,10 +61,27 @@ public class UserServiceImpl implements UserService {
                             .create(userRepresentation);
 
                     if (response.getStatus() == 201) {
+                        if (!StringUtil.isNullOrEmpty(initialPassword)) {
+                            resetUserPasswordInKeycloak(profile.getUserName(), initialPassword);
+                        }
                         emitter.complete(profile);
                     } else {
                         emitter.fail(new KeycloakIntegrationException(response.getStatus()));
                     }
                 }));
+    }
+
+    private void resetUserPasswordInKeycloak(String userName, String password) {
+        final var realm = keycloak.realm(keycloakRealm);
+
+        final var userProfiles = realm.users()
+                .searchByUsername(userName, true);
+        if (!userProfiles.isEmpty()) {
+            final var passwordCredential = new CredentialRepresentation();
+            passwordCredential.setId(CredentialRepresentation.PASSWORD);
+            passwordCredential.setValue(password);
+
+            realm.users().get(userProfiles.get(0).getId()).resetPassword(passwordCredential);
+        }
     }
 }

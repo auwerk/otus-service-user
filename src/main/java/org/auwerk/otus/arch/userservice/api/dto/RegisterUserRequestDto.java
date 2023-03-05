@@ -16,4 +16,5 @@ public class RegisterUserRequestDto {
     private String lastName;
     private LocalDate birthDate;
     private Integer phoneNumber;
+    private String password;
 }

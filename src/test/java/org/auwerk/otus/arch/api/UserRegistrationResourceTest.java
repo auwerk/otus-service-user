@@ -6,9 +6,11 @@ import io.smallrye.mutiny.Uni;
 import org.auwerk.otus.arch.userservice.domain.UserProfile;
 import org.auwerk.otus.arch.userservice.service.UserService;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import static io.restassured.RestAssured.given;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 public class UserRegistrationResourceTest {
@@ -18,7 +20,7 @@ public class UserRegistrationResourceTest {
 
     @Test
     void testRegisterUserEndpoint() {
-        Mockito.when(userService.createUser(Mockito.any(UserProfile.class)))
+        when(userService.createUser(any(UserProfile.class), anyString()))
                 .thenReturn(Uni.createFrom().item(1L));
 
         given()
