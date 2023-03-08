@@ -48,6 +48,11 @@ public class UserServiceImpl implements UserService {
         return userProfileDao.findByUserName(securityIdentity.getPrincipal().getName());
     }
 
+    @Override
+    public Uni<Void> updateMyProfile(UserProfile profile) {
+        return userProfileDao.updateByUserName(securityIdentity.getPrincipal().getName(), profile);
+    }
+
     private Uni<UserProfile> createUserInKeycloak(UserProfile profile, String initialPassword) {
         return vertx.getOrCreateContext().executeBlocking(
                 Uni.createFrom().emitter(emitter -> {

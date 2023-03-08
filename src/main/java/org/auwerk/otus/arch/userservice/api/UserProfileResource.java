@@ -2,6 +2,7 @@ package org.auwerk.otus.arch.userservice.api;
 
 import io.quarkus.security.Authenticated;
 import io.smallrye.mutiny.Uni;
+import org.auwerk.otus.arch.userservice.api.dto.MyProfileDto;
 import org.auwerk.otus.arch.userservice.dao.UserProfileDao;
 import org.auwerk.otus.arch.userservice.mapper.UserProfileMapper;
 import org.auwerk.otus.arch.userservice.service.UserService;
@@ -9,14 +10,12 @@ import org.jboss.resteasy.reactive.NoCache;
 import org.jboss.resteasy.reactive.RestPath;
 
 import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 @Path("/profile")
+@Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class UserProfileResource {
 
@@ -35,7 +34,14 @@ public class UserProfileResource {
     public Uni<Response> myProfile() {
         return userService.getMyProfile()
                 .onItem().transform(profile ->
-                        Response.ok(userProfileMapper.toMyProfileResponseDto(profile)).build());
+                        Response.ok(userProfileMapper.toMyProfileDto(profile)).build());
+    }
+
+    @PUT
+    @Authenticated
+    public Uni<Response> updateMyProfile(MyProfileDto myProfileDto) {
+        return userService.updateMyProfile(userProfileMapper.fromMyProfileDto(myProfileDto))
+                .onItem().transform(v -> Response.ok().build());
     }
 
     @GET

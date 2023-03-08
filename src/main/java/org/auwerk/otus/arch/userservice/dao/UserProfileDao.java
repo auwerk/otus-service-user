@@ -9,4 +9,6 @@ public interface UserProfileDao {
     Uni<UserProfile> findById(Long id);
 
     Uni<UserProfile> findByUserName(String userName);
+
+    Uni<Void> updateByUserName(String userName, UserProfile profile);
 }

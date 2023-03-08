@@ -7,4 +7,6 @@ public interface UserService {
     Uni<Long> createUser(UserProfile profile, String initialPassword);
 
     Uni<UserProfile> getMyProfile();
+
+    Uni<Void> updateMyProfile(UserProfile profile);
 }

@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @RegisterForReflection
-public class MyProfileResponseDto {
+public class MyProfileDto {
     private String userName;
     private String email;
     private String firstName;

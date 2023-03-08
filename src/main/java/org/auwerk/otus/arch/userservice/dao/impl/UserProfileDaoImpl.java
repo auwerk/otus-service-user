@@ -21,6 +21,9 @@ public class UserProfileDaoImpl implements UserProfileDao {
             + "VALUES($1, $2, $3, $4, $5, $6) RETURNING id";
     private static final String SQL_SELECT_BY_ID = "SELECT * FROM user_profiles WHERE id=$1";
     private static final String SQL_SELECT_BY_USERNAME = "SELECT * FROM user_profiles WHERE username=$1";
+    private static final String SQL_UPDATE_BY_USERNAME = "UPDATE user_profiles "
+            + "SET email=$1, first_name=$2, last_name=$3, birth_date=$4, phone_number=$5 "
+            + "WHERE username=$6";
 
     private final PgPool client;
 
@@ -56,6 +59,14 @@ public class UserProfileDaoImpl implements UserProfileDao {
                         throw new UserProfileNotFoundException(userName);
                     }
                 }));
+    }
+
+    @Override
+    public Uni<Void> updateByUserName(String userName, UserProfile profile) {
+        return client.preparedQuery(SQL_UPDATE_BY_USERNAME)
+                .execute(Tuple.of(profile.getEmail(), profile.getFirstName(), profile.getLastName(),
+                        profile.getBirthDate(), profile.getPhoneNumber(), userName))
+                .onItem().transformToUni(rows -> Uni.createFrom().nothing());
     }
 
     private static UserProfile mapRow(Row row) {
