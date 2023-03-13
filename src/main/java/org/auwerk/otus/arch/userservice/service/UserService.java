@@ -8,5 +8,5 @@ public interface UserService {
 
     Uni<UserProfile> getMyProfile();
 
-    Uni<Void> updateMyProfile(UserProfile profile);
+    Uni<Integer> updateMyProfile(UserProfile profile);
 }

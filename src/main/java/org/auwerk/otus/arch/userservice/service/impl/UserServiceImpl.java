@@ -49,7 +49,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Uni<Void> updateMyProfile(UserProfile profile) {
+    public Uni<Integer> updateMyProfile(UserProfile profile) {
         return userProfileDao.updateByUserName(securityIdentity.getPrincipal().getName(), profile);
     }
 

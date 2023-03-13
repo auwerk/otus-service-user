@@ -10,5 +10,5 @@ public interface UserProfileDao {
 
     Uni<UserProfile> findByUserName(String userName);
 
-    Uni<Void> updateByUserName(String userName, UserProfile profile);
+    Uni<Integer> updateByUserName(String userName, UserProfile profile);
 }

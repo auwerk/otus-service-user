@@ -4,6 +4,7 @@ import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.unchecked.Unchecked;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
+import io.vertx.mutiny.sqlclient.SqlResult;
 import io.vertx.mutiny.sqlclient.Tuple;
 import lombok.RequiredArgsConstructor;
 import org.auwerk.otus.arch.userservice.dao.UserProfileDao;
@@ -62,11 +63,11 @@ public class UserProfileDaoImpl implements UserProfileDao {
     }
 
     @Override
-    public Uni<Void> updateByUserName(String userName, UserProfile profile) {
+    public Uni<Integer> updateByUserName(String userName, UserProfile profile) {
         return client.preparedQuery(SQL_UPDATE_BY_USERNAME)
                 .execute(Tuple.of(profile.getEmail(), profile.getFirstName(), profile.getLastName(),
                         profile.getBirthDate(), profile.getPhoneNumber(), userName))
-                .onItem().transformToUni(rows -> Uni.createFrom().nothing());
+                .map(SqlResult::rowCount);
     }
 
     private static UserProfile mapRow(Row row) {

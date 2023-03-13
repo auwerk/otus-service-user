@@ -41,7 +41,8 @@ public class UserProfileResource {
     @Authenticated
     public Uni<Response> updateMyProfile(MyProfileDto myProfileDto) {
         return userService.updateMyProfile(userProfileMapper.fromMyProfileDto(myProfileDto))
-                .onItem().transform(v -> Response.ok().build());
+                .onItem().transform(rowsUpdated -> rowsUpdated == 1
+                        ? Response.ok().build() : Response.serverError().build());
     }
 
     @GET
