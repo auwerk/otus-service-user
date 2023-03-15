@@ -1,5 +1,20 @@
 # otus-service-user
 
+## Configuration
+
+# environment variables
+
+- OTUS_KEYCLOAK_URL
+- OTUS_KEYCLOAK_REALM
+- OTUS_KEYCLOAK_ADMIN_PASSWORD
+- OTUS_KEYCLOAK_CLIENT_ID
+- OTUS_KEYCLOAK_CLIENT_SECRET
+- OTUS_POSTGRES_HOST
+- OTUS_POSTGRES_PORT
+- OTUS_POSTGRES_DB
+- OTUS_POSTGRES_USER
+- OTUS_POSTGRES_PASSWORD
+
 This project uses Quarkus, the Supersonic Subatomic Java Framework.
 
 If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .

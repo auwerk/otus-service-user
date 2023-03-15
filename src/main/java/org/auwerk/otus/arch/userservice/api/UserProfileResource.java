@@ -3,6 +3,7 @@ package org.auwerk.otus.arch.userservice.api;
 import io.quarkus.security.Authenticated;
 import io.smallrye.mutiny.Uni;
 import org.auwerk.otus.arch.userservice.api.dto.MyProfileDto;
+import org.auwerk.otus.arch.userservice.api.dto.UpdateUserProfileRequestDto;
 import org.auwerk.otus.arch.userservice.dao.UserProfileDao;
 import org.auwerk.otus.arch.userservice.mapper.UserProfileMapper;
 import org.auwerk.otus.arch.userservice.service.UserService;
@@ -39,8 +40,8 @@ public class UserProfileResource {
 
     @PUT
     @Authenticated
-    public Uni<Response> updateMyProfile(MyProfileDto myProfileDto) {
-        return userService.updateMyProfile(userProfileMapper.fromMyProfileDto(myProfileDto))
+    public Uni<Response> updateMyProfile(UpdateUserProfileRequestDto requestDto) {
+        return userService.updateMyProfile(userProfileMapper.fromUpdateUserProfileRequestDto(requestDto))
                 .onItem().transform(rowsUpdated -> rowsUpdated == 1
                         ? Response.ok().build() : Response.serverError().build());
     }
