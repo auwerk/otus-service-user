@@ -1,8 +1,8 @@
-package org.auwerk.otus.arch.userservice.service.exception;
+package org.auwerk.otus.arch.userservice.exception;
 
 import lombok.Getter;
 
-public class UserProfileNotFoundException extends Exception {
+public class UserProfileNotFoundException extends RuntimeException {
 
     @Getter
     private final Long userId;
