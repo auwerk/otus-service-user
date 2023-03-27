@@ -23,7 +23,7 @@ public class KeycloakServiceImpl implements KeycloakService {
     private final String keycloakRealm;
 
     public KeycloakServiceImpl(Vertx vertx, Keycloak keycloak, UserProfileMapper userProfileMapper,
-            @ConfigProperty(name = "otus.service.user.keycloak-realm") String keycloakRealm) {
+            @ConfigProperty(name = "otus.keycloak.realm") String keycloakRealm) {
         this.vertx = vertx;
         this.keycloak = keycloak;
         this.userProfileMapper = userProfileMapper;

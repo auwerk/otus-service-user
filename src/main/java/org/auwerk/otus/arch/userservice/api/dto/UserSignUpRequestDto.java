@@ -9,7 +9,7 @@ import java.time.LocalDate;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class RegisterUserRequestDto {
+public class UserSignUpRequestDto {
     private String userName;
     private String email;
     private String firstName;
