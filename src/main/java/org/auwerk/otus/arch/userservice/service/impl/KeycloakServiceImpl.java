@@ -44,7 +44,7 @@ public class KeycloakServiceImpl implements KeycloakService {
                             .create(userRepresentation);
 
                     if (response.getStatus() != 201) {
-                        emitter.fail(new KeycloakIntegrationException(response.getStatus()));
+                        emitter.fail(new KeycloakIntegrationException("user account creation failed"));
                     }
 
                     emitter.complete(profile);
@@ -58,15 +58,17 @@ public class KeycloakServiceImpl implements KeycloakService {
 
             final var userProfiles = realm.users()
                     .searchByUsername(profile.getUserName(), true);
-            if (!userProfiles.isEmpty()) {
-                final var passwordCredential = new CredentialRepresentation();
-                passwordCredential.setId(CredentialRepresentation.PASSWORD);
-                passwordCredential.setValue(password);
-
-                realm.users().get(userProfiles.get(0).getId()).resetPassword(passwordCredential);
-
-                emitter.complete(profile);
+            if (userProfiles.isEmpty()) {
+                emitter.fail(new KeycloakIntegrationException("user account not found"));
             }
+
+            final var passwordCredential = new CredentialRepresentation();
+            passwordCredential.setId(CredentialRepresentation.PASSWORD);
+            passwordCredential.setValue(password);
+
+            realm.users().get(userProfiles.get(0).getId()).resetPassword(passwordCredential);
+
+            emitter.complete(profile);
         }).replaceWithVoid());
     }
 }
