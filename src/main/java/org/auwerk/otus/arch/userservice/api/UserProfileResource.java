@@ -28,7 +28,7 @@ public class UserProfileResource {
     @GET
     @Authenticated
     @NoCache
-    public Uni<Response> myProfile() {
+    public Uni<Response> getMyProfile() {
         return userService.getMyProfile()
                 .map(profile -> Response.ok(userProfileMapper.toMyProfileDto(profile)).build())
                 .onFailure(UserProfileNotFoundException.class)
@@ -48,7 +48,7 @@ public class UserProfileResource {
 
     @GET
     @Path("/{id:\\d+}")
-    public Uni<Response> userProfile(@RestPath Long id) {
+    public Uni<Response> getUserProfile(@RestPath Long id) {
         return userService.getUserProfile(id)
                 .map(profile -> Response.ok(userProfileMapper.toPublicProfileResponseDto(profile)).build())
                 .onFailure(UserProfileNotFoundException.class)

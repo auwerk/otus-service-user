@@ -47,6 +47,7 @@ public class UserServiceImplTest {
     @Test
     void createUser_success() {
         // given
+        final var userId = 1L;
         final var initialPassword = "password";
         final var userProfile = new UserProfile();
 
@@ -55,14 +56,17 @@ public class UserServiceImplTest {
                 .thenReturn(Uni.createFrom().voidItem());
         when(keycloakService.setUserPassword(userProfile, initialPassword))
                 .thenReturn(Uni.createFrom().voidItem());
+        when(userProfileDao.insert(pool, userProfile))
+                .thenReturn(Uni.createFrom().item(userId));
         final var subscriber = userService.createUser(userProfile, initialPassword).subscribe()
                 .withSubscriber(UniAssertSubscriber.create());
 
         // then
-        subscriber.assertCompleted();
+        subscriber.assertItem(userId);
 
         verify(keycloakService, times(1)).createUser(userProfile);
         verify(keycloakService, times(1)).setUserPassword(userProfile, initialPassword);
+        verify(userProfileDao, times(1)).insert(pool, userProfile);
     }
 
     @Test
@@ -88,6 +92,7 @@ public class UserServiceImplTest {
 
         verify(keycloakService, times(1)).createUser(userProfile);
         verify(keycloakService, never()).setUserPassword(userProfile, initialPassword);
+        verify(userProfileDao, never()).insert(pool, userProfile);
     }
 
     @Test
@@ -113,6 +118,7 @@ public class UserServiceImplTest {
 
         verify(keycloakService, times(1)).createUser(userProfile);
         verify(keycloakService, times(1)).setUserPassword(userProfile, initialPassword);
+        verify(userProfileDao, never()).insert(pool, userProfile);
     }
 
     @Test

@@ -5,7 +5,7 @@ import org.auwerk.otus.arch.userservice.domain.UserProfile;
 
 public interface UserService {
     
-    Uni<Void> createUser(UserProfile profile, String initialPassword);
+    Uni<Long> createUser(UserProfile profile, String initialPassword);
 
     Uni<UserProfile> getMyProfile();
 

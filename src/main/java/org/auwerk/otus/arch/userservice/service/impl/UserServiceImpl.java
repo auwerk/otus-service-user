@@ -25,9 +25,10 @@ public class UserServiceImpl implements UserService {
     private final KeycloakService keycloakService;
 
     @Override
-    public Uni<Void> createUser(UserProfile profile, String initialPassword) {
+    public Uni<Long> createUser(UserProfile profile, String initialPassword) {
         return keycloakService.createUser(profile)
-                .chain(() -> keycloakService.setUserPassword(profile, initialPassword));
+                .chain(() -> keycloakService.setUserPassword(profile, initialPassword))
+                .chain(() -> userProfileDao.insert(pool, profile));
     }
 
     @Override
