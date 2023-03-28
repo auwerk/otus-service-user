@@ -1,4 +1,4 @@
-package org.auwerk.otus.arch.api;
+package org.auwerk.otus.arch.userservice.api;
 
 import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.junit.QuarkusTest;
@@ -7,7 +7,6 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.smallrye.mutiny.Uni;
 
-import org.auwerk.otus.arch.userservice.api.UserSignUpResource;
 import org.auwerk.otus.arch.userservice.api.dto.UserSignUpRequestDto;
 import org.auwerk.otus.arch.userservice.domain.UserProfile;
 import org.auwerk.otus.arch.userservice.service.UserService;
