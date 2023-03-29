@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.auwerk.otus.arch.userservice.dao.UserProfileDao;
 import org.auwerk.otus.arch.userservice.domain.UserProfile;
 import org.auwerk.otus.arch.userservice.exception.UserProfileNotFoundException;
+import org.auwerk.otus.arch.userservice.service.BillingService;
 import org.auwerk.otus.arch.userservice.service.KeycloakService;
 import org.auwerk.otus.arch.userservice.service.UserService;
 
@@ -23,11 +24,13 @@ public class UserServiceImpl implements UserService {
     private final SecurityIdentity securityIdentity;
     private final UserProfileDao userProfileDao;
     private final KeycloakService keycloakService;
+    private final BillingService billingService;
 
     @Override
     public Uni<Long> createUser(UserProfile profile, String initialPassword) {
         return keycloakService.createUser(profile)
                 .chain(() -> keycloakService.setUserPassword(profile, initialPassword))
+                .chain(() -> billingService.createUserAccount(profile.getUserName()))
                 .chain(() -> userProfileDao.insert(pool, profile));
     }
 

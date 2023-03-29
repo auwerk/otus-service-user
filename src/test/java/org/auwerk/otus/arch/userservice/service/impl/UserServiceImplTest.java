@@ -11,11 +11,13 @@ import static org.mockito.Mockito.when;
 
 import java.security.Principal;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 
 import org.auwerk.otus.arch.userservice.dao.UserProfileDao;
 import org.auwerk.otus.arch.userservice.domain.UserProfile;
 import org.auwerk.otus.arch.userservice.exception.KeycloakIntegrationException;
 import org.auwerk.otus.arch.userservice.exception.UserProfileNotFoundException;
+import org.auwerk.otus.arch.userservice.service.BillingService;
 import org.auwerk.otus.arch.userservice.service.KeycloakService;
 import org.auwerk.otus.arch.userservice.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,13 +31,15 @@ import io.vertx.mutiny.pgclient.PgPool;
 public class UserServiceImplTest {
 
     private static final String USERNAME = "user";
+    private static final UUID ACCOUNT_ID = UUID.randomUUID();
 
     private final PgPool pool = mock(PgPool.class);
     private final SecurityIdentity securityIdentity = mock(SecurityIdentity.class);
     private final UserProfileDao userProfileDao = mock(UserProfileDao.class);
     private final KeycloakService keycloakService = mock(KeycloakService.class);
+    private final BillingService billingService = mock(BillingService.class);
     private final UserService userService = new UserServiceImpl(pool, securityIdentity, userProfileDao,
-            keycloakService);
+            keycloakService, billingService);
 
     @BeforeEach
     void mockSecurityIdentity() {
@@ -50,8 +54,11 @@ public class UserServiceImplTest {
         final var userId = 1L;
         final var initialPassword = "password";
         final var userProfile = new UserProfile();
+        userProfile.setUserName(USERNAME);
 
         // when
+        when(billingService.createUserAccount(USERNAME))
+                .thenReturn(Uni.createFrom().item(ACCOUNT_ID));
         when(keycloakService.createUser(userProfile))
                 .thenReturn(Uni.createFrom().voidItem());
         when(keycloakService.setUserPassword(userProfile, initialPassword))
