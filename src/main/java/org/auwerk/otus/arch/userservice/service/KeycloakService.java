@@ -6,7 +6,7 @@ import io.smallrye.mutiny.Uni;
 
 public interface KeycloakService {
     
-    Uni<Void> createUser(UserProfile profile);
+    Uni<Void> createUserAccount(UserProfile profile);
 
     Uni<Void> deleteUserAccount(UserProfile profile);
 

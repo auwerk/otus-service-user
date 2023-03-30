@@ -12,4 +12,6 @@ public interface UserService {
     Uni<UserProfile> getUserProfile(Long id);
 
     Uni<Void> updateMyProfile(UserProfile profile);
+
+    Uni<Void> deleteMyProfile();
 }

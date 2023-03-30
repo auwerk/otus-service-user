@@ -34,7 +34,7 @@ public class KeycloakServiceImpl implements KeycloakService {
     }
 
     @Override
-    public Uni<Void> createUser(UserProfile profile) {
+    public Uni<Void> createUserAccount(UserProfile profile) {
         return vertx.getOrCreateContext().executeBlocking(
                 Uni.createFrom().emitter(emitter -> {
                     final var userRepresentation = new UserRepresentation();
@@ -62,6 +62,8 @@ public class KeycloakServiceImpl implements KeycloakService {
                 final var userId = getUserIdByName(realm, profile.getUserName())
                         .orElseThrow(() -> new KeycloakIntegrationException("user account not found"));
 
+                realm.users().get(userId).logout();
+                
                 final var response = realm.users().delete(userId);
                 if (response.getStatus() != 200) {
                     emitter.fail(new KeycloakIntegrationException(

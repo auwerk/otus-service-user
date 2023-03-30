@@ -28,7 +28,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Uni<Long> createUser(UserProfile profile, String initialPassword) {
-        return keycloakService.createUser(profile)
+        return keycloakService.createUserAccount(profile)
                 .chain(() -> keycloakService.setUserPassword(profile, initialPassword))
                 .chain(() -> billingService.createUserAccount(profile.getUserName()))
                 .chain(() -> userProfileDao.insert(pool, profile));
@@ -51,6 +51,13 @@ public class UserServiceImpl implements UserService {
     @Override
     public Uni<Void> updateMyProfile(UserProfile profile) {
         return userProfileDao.updateByUserName(pool, getUserName(), profile);
+    }
+
+    @Override
+    public Uni<Void> deleteMyProfile() {
+        return userProfileDao.findByUserName(pool, getUserName())
+                .flatMap(userProfile -> Uni.combine().all().unis(keycloakService.deleteUserAccount(userProfile),
+                        userProfileDao.deleteById(pool, userProfile.getId())).discardItems());
     }
 
     private String getUserName() {

@@ -2,8 +2,10 @@ package org.auwerk.otus.arch.userservice.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -49,14 +51,14 @@ public class KeycloakServiceImplTest {
     }
 
     @Test
-    void createUser_success() {
+    void createUserAccount_success() {
         // given
         final var userProfile = new UserProfile();
 
         // when
         when(usersResource.create(any(UserRepresentation.class)))
                 .thenReturn(Response.status(201).build());
-        final var subscriber = keycloakService.createUser(userProfile).subscribe()
+        final var subscriber = keycloakService.createUserAccount(userProfile).subscribe()
                 .withSubscriber(UniAssertSubscriber.create());
 
         // then
@@ -68,14 +70,15 @@ public class KeycloakServiceImplTest {
     }
 
     @Test
-    void createUser_failure() {
+    void createUserAccount_failure() {
         // given
+        final var responseStatus = 500;
         final var userProfile = new UserProfile();
 
         // when
         when(usersResource.create(any(UserRepresentation.class)))
-                .thenReturn(Response.status(500).build());
-        final var subscriber = keycloakService.createUser(userProfile).subscribe()
+                .thenReturn(Response.status(responseStatus).build());
+        final var subscriber = keycloakService.createUserAccount(userProfile).subscribe()
                 .withSubscriber(UniAssertSubscriber.create());
 
         // then
@@ -83,25 +86,93 @@ public class KeycloakServiceImplTest {
         final var failure = subscriber
                 .assertFailedWith(KeycloakIntegrationException.class)
                 .getFailure();
-        assertEquals("user account creation failed", failure.getMessage());
+        assertEquals("user account creation failed, status=" + responseStatus, failure.getMessage());
+    }
+
+    @Test
+    void deleteUserAccount_success() {
+        // given
+        final var userProfile = buildUserProfile();
+        final var userRepresentation = buildUserRepresentation();
+        final var userResource = mock(UserResource.class);
+
+        // when
+        when(usersResource.get(userRepresentation.getId()))
+                .thenReturn(userResource);
+        when(usersResource.searchByUsername(userProfile.getUserName(), true))
+                .thenReturn(List.of(userRepresentation));
+        when(usersResource.delete(userRepresentation.getId()))
+                .thenReturn(Response.status(200).build());
+        final var subscriber = keycloakService.deleteUserAccount(userProfile).subscribe()
+                .withSubscriber(UniAssertSubscriber.create());
+
+        // then
+        vertx.closeAndAwait(); // run blocking code
+        subscriber.assertCompleted();
+
+        verify(userResource, times(1)).logout();
+        verify(usersResource, times(1)).delete(userRepresentation.getId());
+    }
+
+    @Test
+    void deleteUserAccount_userNotFound() {
+        // given
+        final var userProfile = buildUserProfile();
+
+        // when
+        when(usersResource.searchByUsername(userProfile.getUserName(), true))
+                .thenReturn(List.of());
+        final var subscriber = keycloakService.deleteUserAccount(userProfile).subscribe()
+                .withSubscriber(UniAssertSubscriber.create());
+
+        // then
+        vertx.closeAndAwait(); // run blocking code
+        final var failure = subscriber
+                .assertFailedWith(KeycloakIntegrationException.class)
+                .getFailure();
+        assertEquals("user account not found", failure.getMessage());
+
+        verify(usersResource, never()).delete(anyString());
+    }
+
+    @Test
+    void deleteUserAccount_failure() {
+        // given
+        final var responseStatus = 500;
+        final var userProfile = buildUserProfile();
+        final var userRepresentation = buildUserRepresentation();
+        final var userResource = mock(UserResource.class);
+
+        // when
+        when(usersResource.get(userRepresentation.getId()))
+                .thenReturn(userResource);
+        when(usersResource.searchByUsername(userProfile.getUserName(), true))
+                .thenReturn(List.of(userRepresentation));
+        when(usersResource.delete(userRepresentation.getId()))
+                .thenReturn(Response.status(responseStatus).build());
+        final var subscriber = keycloakService.deleteUserAccount(userProfile).subscribe()
+                .withSubscriber(UniAssertSubscriber.create());
+
+        // then
+        vertx.closeAndAwait(); // run blocking code
+        final var failure = subscriber
+                .assertFailedWith(KeycloakIntegrationException.class)
+                .getFailure();
+        assertEquals("user account deletion failed, status=" + responseStatus, failure.getMessage());
     }
 
     @Test
     void setUserPassword_success() {
         // given
-        final var userId = "some-id";
-        final var userName = "user";
         final var password = "password";
-        final var userProfile = new UserProfile();
-        final var userRepresentation = new UserRepresentation();
+        final var userProfile = buildUserProfile();
+        final var userRepresentation = buildUserRepresentation();
         final var userResource = mock(UserResource.class);
 
         // when
-        userProfile.setUserName(userName);
-        userRepresentation.setId(userId);
-        when(usersResource.searchByUsername(userName, true))
+        when(usersResource.searchByUsername(userProfile.getUserName(), true))
                 .thenReturn(List.of(userRepresentation));
-        when(usersResource.get(userId))
+        when(usersResource.get(userRepresentation.getId()))
                 .thenReturn(userResource);
         final var subscriber = keycloakService.setUserPassword(userProfile, password).subscribe()
                 .withSubscriber(UniAssertSubscriber.create());
@@ -119,14 +190,12 @@ public class KeycloakServiceImplTest {
     void setUserPassword_userNotFound() {
         // given
         final var userId = "some-id";
-        final var userName = "user";
         final var password = "password";
-        final var userProfile = new UserProfile();
+        final var userProfile = buildUserProfile();
         final var userResource = mock(UserResource.class);
 
         // when
-        userProfile.setUserName(userName);
-        when(usersResource.searchByUsername(userName, true))
+        when(usersResource.searchByUsername(userProfile.getUserName(), true))
                 .thenReturn(List.of());
         when(usersResource.get(userId))
                 .thenReturn(userResource);
@@ -139,5 +208,17 @@ public class KeycloakServiceImplTest {
                 .assertFailedWith(KeycloakIntegrationException.class)
                 .getFailure();
         assertEquals("user account not found", failure.getMessage());
+    }
+
+    private static UserProfile buildUserProfile() {
+        final var userProfile = new UserProfile();
+        userProfile.setUserName("user");
+        return userProfile;
+    }
+
+    private static UserRepresentation buildUserRepresentation() {
+        final var userRepresentation = new UserRepresentation();
+        userRepresentation.setId("some-user-id");
+        return userRepresentation;
     }
 }

@@ -59,7 +59,7 @@ public class UserServiceImplTest {
         // when
         when(billingService.createUserAccount(USERNAME))
                 .thenReturn(Uni.createFrom().item(ACCOUNT_ID));
-        when(keycloakService.createUser(userProfile))
+        when(keycloakService.createUserAccount(userProfile))
                 .thenReturn(Uni.createFrom().voidItem());
         when(keycloakService.setUserPassword(userProfile, initialPassword))
                 .thenReturn(Uni.createFrom().voidItem());
@@ -71,7 +71,7 @@ public class UserServiceImplTest {
         // then
         subscriber.assertItem(userId);
 
-        verify(keycloakService, times(1)).createUser(userProfile);
+        verify(keycloakService, times(1)).createUserAccount(userProfile);
         verify(keycloakService, times(1)).setUserPassword(userProfile, initialPassword);
         verify(userProfileDao, times(1)).insert(pool, userProfile);
     }
@@ -84,7 +84,7 @@ public class UserServiceImplTest {
         final var ex = new KeycloakIntegrationException("");
 
         // when
-        when(keycloakService.createUser(userProfile))
+        when(keycloakService.createUserAccount(userProfile))
                 .thenReturn(Uni.createFrom().failure(ex));
         when(keycloakService.setUserPassword(userProfile, initialPassword))
                 .thenReturn(Uni.createFrom().voidItem());
@@ -97,7 +97,7 @@ public class UserServiceImplTest {
                 .getFailure();
         assertSame(ex, failure);
 
-        verify(keycloakService, times(1)).createUser(userProfile);
+        verify(keycloakService, times(1)).createUserAccount(userProfile);
         verify(keycloakService, never()).setUserPassword(userProfile, initialPassword);
         verify(userProfileDao, never()).insert(pool, userProfile);
     }
@@ -110,7 +110,7 @@ public class UserServiceImplTest {
         final var ex = new KeycloakIntegrationException("");
 
         // when
-        when(keycloakService.createUser(userProfile))
+        when(keycloakService.createUserAccount(userProfile))
                 .thenReturn(Uni.createFrom().voidItem());
         when(keycloakService.setUserPassword(userProfile, initialPassword))
                 .thenReturn(Uni.createFrom().failure(ex));
@@ -123,7 +123,7 @@ public class UserServiceImplTest {
                 .getFailure();
         assertSame(ex, failure);
 
-        verify(keycloakService, times(1)).createUser(userProfile);
+        verify(keycloakService, times(1)).createUserAccount(userProfile);
         verify(keycloakService, times(1)).setUserPassword(userProfile, initialPassword);
         verify(userProfileDao, never()).insert(pool, userProfile);
     }
