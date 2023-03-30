@@ -1,5 +1,6 @@
 package org.auwerk.otus.arch.userservice.client;
 
+import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -16,4 +17,8 @@ public interface BillingAccountManagementClient {
     @POST
     @Path("/{userName}")
     Uni<CreateUserAccountResponseDto> createUserAccount(@PathParam("userName") String userName);
+
+    @DELETE
+    @Path("/{userName}")
+    Uni<Void> deleteUserAccount(@PathParam("userName") String userName);
 }

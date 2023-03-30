@@ -7,4 +7,6 @@ import io.smallrye.mutiny.Uni;
 public interface BillingService {
     
     Uni<UUID> createUserAccount(String userName);
+
+    Uni<Void> deleteUserAccount(String userName);
 }

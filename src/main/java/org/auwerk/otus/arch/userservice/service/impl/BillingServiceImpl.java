@@ -16,11 +16,16 @@ public class BillingServiceImpl implements BillingService {
 
     @Inject
     @RestClient
-    BillingAccountManagementClient billingServiceClient;
+    BillingAccountManagementClient accountManagementClient;
 
     @Override
     public Uni<UUID> createUserAccount(String userName) {
-        return billingServiceClient.createUserAccount(userName)
+        return accountManagementClient.createUserAccount(userName)
                 .map(response -> response.getAccountId());
+    }
+
+    @Override
+    public Uni<Void> deleteUserAccount(String userName) {
+        return accountManagementClient.deleteUserAccount(userName);
     }
 }

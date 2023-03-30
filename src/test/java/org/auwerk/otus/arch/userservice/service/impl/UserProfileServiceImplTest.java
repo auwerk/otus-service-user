@@ -232,6 +232,7 @@ public class UserProfileServiceImplTest {
         // then
         subscriber.assertCompleted();
 
+        verify(billingService, times(1)).deleteUserAccount(USERNAME);
         verify(keycloakService, times(1)).deleteUserAccount(userProfile);
         verify(userProfileDao, times(1)).deleteById(pool, userProfile.getId());
     }

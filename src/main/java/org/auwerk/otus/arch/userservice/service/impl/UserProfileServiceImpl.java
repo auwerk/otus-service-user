@@ -53,6 +53,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     public Uni<Void> deleteMyProfile() {
         return userProfileDao.findByUserName(pool, getUserName())
                 .flatMap(userProfile -> Uni.combine().all().unis(keycloakService.deleteUserAccount(userProfile),
+                        billingService.deleteUserAccount(getUserName()),
                         userProfileDao.deleteById(pool, userProfile.getId())).discardItems())
                 .onFailure(NoSuchElementException.class)
                 .transform(f -> new UserProfileNotFoundException(getUserName()));
