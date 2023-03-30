@@ -8,6 +8,7 @@ public interface KeycloakService {
     
     Uni<Void> createUser(UserProfile profile);
 
-    Uni<Void> setUserPassword(UserProfile profile, String password);
+    Uni<Void> deleteUserAccount(UserProfile profile);
 
+    Uni<Void> setUserPassword(UserProfile profile, String password);
 }

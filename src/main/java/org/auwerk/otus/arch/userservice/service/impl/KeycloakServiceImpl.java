@@ -1,5 +1,7 @@
 package org.auwerk.otus.arch.userservice.service.impl;
 
+import java.util.Optional;
+
 import javax.enterprise.context.ApplicationScoped;
 
 import org.auwerk.otus.arch.userservice.domain.UserProfile;
@@ -8,6 +10,7 @@ import org.auwerk.otus.arch.userservice.mapper.UserProfileMapper;
 import org.auwerk.otus.arch.userservice.service.KeycloakService;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
@@ -42,33 +45,62 @@ public class KeycloakServiceImpl implements KeycloakService {
 
                     final var response = keycloak.realm(keycloakRealm).users()
                             .create(userRepresentation);
-
                     if (response.getStatus() != 201) {
-                        emitter.fail(new KeycloakIntegrationException("user account creation failed"));
+                        emitter.fail(new KeycloakIntegrationException(
+                                "user account creation failed, status=" + response.getStatus()));
                     }
 
-                    emitter.complete(profile);
+                    emitter.complete(response);
                 }).replaceWithVoid());
+    }
+
+    @Override
+    public Uni<Void> deleteUserAccount(UserProfile profile) {
+        return vertx.getOrCreateContext().executeBlocking(Uni.createFrom().emitter(emitter -> {
+            try {
+                final var realm = keycloak.realm(keycloakRealm);
+                final var userId = getUserIdByName(realm, profile.getUserName())
+                        .orElseThrow(() -> new KeycloakIntegrationException("user account not found"));
+
+                final var response = realm.users().delete(userId);
+                if (response.getStatus() != 200) {
+                    emitter.fail(new KeycloakIntegrationException(
+                            "user account deletion failed, status=" + response.getStatus()));
+                }
+
+                emitter.complete(response);
+            } catch (Throwable t) {
+                emitter.fail(t);
+            }
+        }).replaceWithVoid());
     }
 
     @Override
     public Uni<Void> setUserPassword(UserProfile profile, String password) {
         return vertx.getOrCreateContext().executeBlocking(Uni.createFrom().emitter(emitter -> {
-            final var realm = keycloak.realm(keycloakRealm);
+            try {
+                final var realm = keycloak.realm(keycloakRealm);
+                final var userId = getUserIdByName(realm, profile.getUserName())
+                        .orElseThrow(() -> new KeycloakIntegrationException("user account not found"));
 
-            final var userProfiles = realm.users()
-                    .searchByUsername(profile.getUserName(), true);
-            if (userProfiles.isEmpty()) {
-                emitter.fail(new KeycloakIntegrationException("user account not found"));
+                final var passwordCredential = new CredentialRepresentation();
+                passwordCredential.setId(CredentialRepresentation.PASSWORD);
+                passwordCredential.setValue(password);
+
+                realm.users().get(userId).resetPassword(passwordCredential);
+
+                emitter.complete(profile);
+            } catch (Throwable t) {
+                emitter.fail(t);
             }
-
-            final var passwordCredential = new CredentialRepresentation();
-            passwordCredential.setId(CredentialRepresentation.PASSWORD);
-            passwordCredential.setValue(password);
-
-            realm.users().get(userProfiles.get(0).getId()).resetPassword(passwordCredential);
-
-            emitter.complete(profile);
         }).replaceWithVoid());
+    }
+
+    private static Optional<String> getUserIdByName(RealmResource realm, String userName) {
+        final var userProfiles = realm.users().searchByUsername(userName, true);
+        if (userProfiles.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(userProfiles.get(0).getId());
     }
 }
