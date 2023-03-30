@@ -19,7 +19,7 @@ import org.auwerk.otus.arch.userservice.exception.KeycloakIntegrationException;
 import org.auwerk.otus.arch.userservice.exception.UserProfileNotFoundException;
 import org.auwerk.otus.arch.userservice.service.BillingService;
 import org.auwerk.otus.arch.userservice.service.KeycloakService;
-import org.auwerk.otus.arch.userservice.service.UserService;
+import org.auwerk.otus.arch.userservice.service.UserProfileService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +28,7 @@ import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import io.vertx.mutiny.pgclient.PgPool;
 
-public class UserServiceImplTest {
+public class UserProfileServiceImplTest {
 
     private static final String USERNAME = "user";
     private static final UUID ACCOUNT_ID = UUID.randomUUID();
@@ -38,8 +38,8 @@ public class UserServiceImplTest {
     private final UserProfileDao userProfileDao = mock(UserProfileDao.class);
     private final KeycloakService keycloakService = mock(KeycloakService.class);
     private final BillingService billingService = mock(BillingService.class);
-    private final UserService userService = new UserServiceImpl(pool, securityIdentity, userProfileDao,
-            keycloakService, billingService);
+    private final UserProfileService userProfileService = new UserProfileServiceImpl(pool, securityIdentity,
+            userProfileDao, keycloakService, billingService);
 
     @BeforeEach
     void mockSecurityIdentity() {
@@ -49,7 +49,7 @@ public class UserServiceImplTest {
     }
 
     @Test
-    void createUser_success() {
+    void createUserProfile_success() {
         // given
         final var userId = 1L;
         final var initialPassword = "password";
@@ -65,7 +65,7 @@ public class UserServiceImplTest {
                 .thenReturn(Uni.createFrom().voidItem());
         when(userProfileDao.insert(pool, userProfile))
                 .thenReturn(Uni.createFrom().item(userId));
-        final var subscriber = userService.createUser(userProfile, initialPassword).subscribe()
+        final var subscriber = userProfileService.createUserProfile(userProfile, initialPassword).subscribe()
                 .withSubscriber(UniAssertSubscriber.create());
 
         // then
@@ -77,7 +77,7 @@ public class UserServiceImplTest {
     }
 
     @Test
-    void createUser_keycloakCreateUserAccountFailed() {
+    void createUserProfile_keycloakCreateUserAccountFailed() {
         // given
         final var initialPassword = "password";
         final var userProfile = new UserProfile();
@@ -88,7 +88,7 @@ public class UserServiceImplTest {
                 .thenReturn(Uni.createFrom().failure(ex));
         when(keycloakService.setUserPassword(userProfile, initialPassword))
                 .thenReturn(Uni.createFrom().voidItem());
-        final var subscriber = userService.createUser(userProfile, initialPassword).subscribe()
+        final var subscriber = userProfileService.createUserProfile(userProfile, initialPassword).subscribe()
                 .withSubscriber(UniAssertSubscriber.create());
 
         // then
@@ -103,7 +103,7 @@ public class UserServiceImplTest {
     }
 
     @Test
-    void createUser_keycloakSetUserPasswordFailed() {
+    void createUserProfile_keycloakSetUserPasswordFailed() {
         // given
         final var initialPassword = "password";
         final var userProfile = new UserProfile();
@@ -114,7 +114,7 @@ public class UserServiceImplTest {
                 .thenReturn(Uni.createFrom().voidItem());
         when(keycloakService.setUserPassword(userProfile, initialPassword))
                 .thenReturn(Uni.createFrom().failure(ex));
-        final var subscriber = userService.createUser(userProfile, initialPassword).subscribe()
+        final var subscriber = userProfileService.createUserProfile(userProfile, initialPassword).subscribe()
                 .withSubscriber(UniAssertSubscriber.create());
 
         // then
@@ -136,7 +136,7 @@ public class UserServiceImplTest {
         // when
         when(userProfileDao.findByUserName(pool, USERNAME))
                 .thenReturn(Uni.createFrom().item(userProfile));
-        final var subscriber = userService.getMyProfile().subscribe()
+        final var subscriber = userProfileService.getMyProfile().subscribe()
                 .withSubscriber(UniAssertSubscriber.create());
 
         // then
@@ -144,11 +144,11 @@ public class UserServiceImplTest {
     }
 
     @Test
-    void getMyProfile_userNotFound() {
+    void getMyProfile_userProfileNotFound() {
         // when
         when(userProfileDao.findByUserName(pool, USERNAME))
                 .thenReturn(Uni.createFrom().failure(new NoSuchElementException()));
-        final var subscriber = userService.getMyProfile().subscribe()
+        final var subscriber = userProfileService.getMyProfile().subscribe()
                 .withSubscriber(UniAssertSubscriber.create());
 
         // then
@@ -159,40 +159,6 @@ public class UserServiceImplTest {
     }
 
     @Test
-    void getUserProfile_success() {
-        // given
-        final var userId = 1L;
-        final var userProfile = new UserProfile();
-
-        // when
-        when(userProfileDao.findById(pool, userId))
-                .thenReturn(Uni.createFrom().item(userProfile));
-        final var subscriber = userService.getUserProfile(userId).subscribe()
-                .withSubscriber(UniAssertSubscriber.create());
-
-        // then
-        subscriber.assertItem(userProfile);
-    }
-
-    @Test
-    void getUserProfile_userNotFound() {
-        // given
-        final var userId = 1L;
-
-        // when
-        when(userProfileDao.findById(pool, userId))
-                .thenReturn(Uni.createFrom().failure(new NoSuchElementException()));
-        final var subscriber = userService.getUserProfile(userId).subscribe()
-                .withSubscriber(UniAssertSubscriber.create());
-
-        // then
-        final var failure = (UserProfileNotFoundException) subscriber
-                .assertFailedWith(UserProfileNotFoundException.class)
-                .getFailure();
-        assertEquals(userId, failure.getUserId());
-    }
-
-    @Test
     void updateMyProfile_success() {
         // given
         final var userProfile = new UserProfile();
@@ -200,7 +166,7 @@ public class UserServiceImplTest {
         // when
         when(userProfileDao.updateByUserName(pool, USERNAME, userProfile))
                 .thenReturn(Uni.createFrom().voidItem());
-        final var subscriber = userService.updateMyProfile(userProfile).subscribe()
+        final var subscriber = userProfileService.updateMyProfile(userProfile).subscribe()
                 .withSubscriber(UniAssertSubscriber.create());
 
         // then

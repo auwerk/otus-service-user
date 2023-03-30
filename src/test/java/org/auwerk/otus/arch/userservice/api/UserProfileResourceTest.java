@@ -9,7 +9,7 @@ import java.time.format.DateTimeFormatter;
 import org.auwerk.otus.arch.userservice.api.dto.UpdateUserProfileRequestDto;
 import org.auwerk.otus.arch.userservice.domain.UserProfile;
 import org.auwerk.otus.arch.userservice.exception.UserProfileNotFoundException;
-import org.auwerk.otus.arch.userservice.service.UserService;
+import org.auwerk.otus.arch.userservice.service.UserProfileService;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -30,7 +30,7 @@ public class UserProfileResourceTest {
     private final KeycloakTestClient keycloakTestClient = new KeycloakTestClient();
 
     @InjectMock
-    UserService userService;
+    UserProfileService userService;
 
     @Test
     void getMyProfile_success() {
@@ -123,58 +123,6 @@ public class UserProfileResourceTest {
                 .contentType(ContentType.JSON)
                 .body(request)
                 .put()
-                .then()
-                .statusCode(500);
-    }
-
-    @Test
-    void getUserProfile_success() {
-        // given
-        final var userProfile = buildUserProfile();
-
-        // when
-        Mockito.when(userService.getUserProfile(userProfile.getId()))
-                .thenReturn(Uni.createFrom().item(userProfile));
-
-        // then
-        RestAssured.given()
-                .get("/" + userProfile.getId())
-                .then()
-                .statusCode(200)
-                .body("userName", Matchers.equalTo(userProfile.getUserName()))
-                .body("firstName", Matchers.equalTo(userProfile.getFirstName()))
-                .body("lastName", Matchers.equalTo(userProfile.getLastName()))
-                .body("birthDate", Matchers.equalTo(dateFormatter.format(userProfile.getBirthDate())));
-    }
-
-    @Test
-    void getUserProfile_userNotFound() {
-        // given
-        final var userId = 1L;
-
-        // when
-        Mockito.when(userService.getUserProfile(userId))
-                .thenReturn(Uni.createFrom().failure(new UserProfileNotFoundException(userId)));
-
-        // then
-        RestAssured.given()
-                .get("/" + userId)
-                .then()
-                .statusCode(404);
-    }
-
-    @Test
-    void getUserProfile_serverError() {
-        // given
-        final var userId = 1L;
-
-        // when
-        Mockito.when(userService.getUserProfile(userId))
-                .thenReturn(Uni.createFrom().failure(new RuntimeException()));
-
-        // then
-        RestAssured.given()
-                .get("/" + userId)
                 .then()
                 .statusCode(500);
     }

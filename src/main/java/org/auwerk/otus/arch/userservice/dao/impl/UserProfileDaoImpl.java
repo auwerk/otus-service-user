@@ -31,19 +31,6 @@ public class UserProfileDaoImpl implements UserProfileDao {
     }
 
     @Override
-    public Uni<UserProfile> findById(PgPool pool, Long id) {
-        return pool.preparedQuery("SELECT * FROM user_profiles WHERE id=$1")
-                .execute(Tuple.of(id))
-                .map(rowSet -> {
-                    final var rowSetIterator = rowSet.iterator();
-                    if (!rowSet.iterator().hasNext()) {
-                        throw new NoSuchElementException("user profile not found, id=" + id);
-                    }
-                    return mapRow(rowSetIterator.next());
-                });
-    }
-
-    @Override
     public Uni<UserProfile> findByUserName(PgPool pool, String userName) {
         return pool.preparedQuery("SELECT * FROM user_profiles WHERE username=$1")
                 .execute(Tuple.of(userName))

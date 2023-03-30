@@ -10,7 +10,7 @@ import org.auwerk.otus.arch.userservice.domain.UserProfile;
 import org.auwerk.otus.arch.userservice.exception.UserProfileNotFoundException;
 import org.auwerk.otus.arch.userservice.service.BillingService;
 import org.auwerk.otus.arch.userservice.service.KeycloakService;
-import org.auwerk.otus.arch.userservice.service.UserService;
+import org.auwerk.otus.arch.userservice.service.UserProfileService;
 
 import java.util.NoSuchElementException;
 
@@ -18,7 +18,7 @@ import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 @RequiredArgsConstructor
-public class UserServiceImpl implements UserService {
+public class UserProfileServiceImpl implements UserProfileService {
 
     private final PgPool pool;
     private final SecurityIdentity securityIdentity;
@@ -27,7 +27,7 @@ public class UserServiceImpl implements UserService {
     private final BillingService billingService;
 
     @Override
-    public Uni<Long> createUser(UserProfile profile, String initialPassword) {
+    public Uni<Long> createUserProfile(UserProfile profile, String initialPassword) {
         return keycloakService.createUserAccount(profile)
                 .chain(() -> keycloakService.setUserPassword(profile, initialPassword))
                 .chain(() -> billingService.createUserAccount(profile.getUserName()))
@@ -39,13 +39,6 @@ public class UserServiceImpl implements UserService {
         return userProfileDao.findByUserName(pool, getUserName())
                 .onFailure(NoSuchElementException.class)
                 .transform(f -> new UserProfileNotFoundException(getUserName()));
-    }
-
-    @Override
-    public Uni<UserProfile> getUserProfile(Long id) {
-        return userProfileDao.findById(pool, id)
-                .onFailure(NoSuchElementException.class)
-                .transform(f -> new UserProfileNotFoundException(id));
     }
 
     @Override

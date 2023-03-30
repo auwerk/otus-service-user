@@ -9,8 +9,6 @@ public interface UserProfileDao {
 
     Uni<Long> insert(PgPool pool, UserProfile profile);
 
-    Uni<UserProfile> findById(PgPool pool, Long id);
-
     Uni<UserProfile> findByUserName(PgPool pool, String userName);
 
     Uni<Void> updateByUserName(PgPool pool, String userName, UserProfile profile);

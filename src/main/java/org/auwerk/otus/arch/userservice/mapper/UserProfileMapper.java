@@ -1,7 +1,6 @@
 package org.auwerk.otus.arch.userservice.mapper;
 
 import org.auwerk.otus.arch.userservice.api.dto.MyProfileDto;
-import org.auwerk.otus.arch.userservice.api.dto.PublicProfileResponseDto;
 import org.auwerk.otus.arch.userservice.api.dto.UserSignUpRequestDto;
 import org.auwerk.otus.arch.userservice.api.dto.UpdateUserProfileRequestDto;
 import org.auwerk.otus.arch.userservice.domain.UserProfile;
@@ -14,9 +13,7 @@ import org.mapstruct.ReportingPolicy;
 @Mapper(componentModel = "cdi", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface UserProfileMapper {
 
-    UserProfile fromRegisterUserRequestDto(UserSignUpRequestDto dto);
-
-    PublicProfileResponseDto toPublicProfileResponseDto(UserProfile profile);
+    UserProfile fromUserSignUpRequestDto(UserSignUpRequestDto dto);
 
     UserProfile fromUpdateUserProfileRequestDto(UpdateUserProfileRequestDto updateUserProfileRequestDto);
 

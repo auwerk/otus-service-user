@@ -3,7 +3,7 @@ package org.auwerk.otus.arch.userservice.api;
 import io.smallrye.mutiny.Uni;
 import org.auwerk.otus.arch.userservice.api.dto.UserSignUpRequestDto;
 import org.auwerk.otus.arch.userservice.mapper.UserProfileMapper;
-import org.auwerk.otus.arch.userservice.service.UserService;
+import org.auwerk.otus.arch.userservice.service.UserProfileService;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.inject.Inject;
@@ -17,7 +17,7 @@ import java.net.URI;
 public class UserSignUpResource {
 
     @Inject
-    UserService userService;
+    UserProfileService userProfileService;
 
     @Inject
     UserProfileMapper userProfileMapper;
@@ -27,9 +27,9 @@ public class UserSignUpResource {
 
     @POST
     @Produces(MediaType.TEXT_PLAIN)
-    public Uni<Response> registerUser(UserSignUpRequestDto requestDto) {
-        return userService
-                .createUser(userProfileMapper.fromRegisterUserRequestDto(requestDto), requestDto.getPassword())
+    public Uni<Response> signUp(UserSignUpRequestDto requestDto) {
+        return userProfileService
+                .createUserProfile(userProfileMapper.fromUserSignUpRequestDto(requestDto), requestDto.getPassword())
                 .map(userId -> Response.created(URI.create(publicPath + "/profile/" + userId)).build())
                 .onFailure()
                 .recoverWithItem(failure -> Response.serverError().entity(failure.getMessage()).build());
