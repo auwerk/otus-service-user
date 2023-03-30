@@ -69,7 +69,7 @@ public class KeycloakServiceImpl implements KeycloakService {
                 realm.users().get(userId).logout();
 
                 final var response = realm.users().delete(userId);
-                if (response.getStatus() != 200) {
+                if (response.getStatus() != 204) {
                     throw new KeycloakIntegrationException(
                             "user account deletion failed, status=" + response.getStatus());
                 }

@@ -102,7 +102,7 @@ public class KeycloakServiceImplTest {
         when(usersResource.searchByUsername(userProfile.getUserName(), true))
                 .thenReturn(List.of(userRepresentation));
         when(usersResource.delete(userRepresentation.getId()))
-                .thenReturn(Response.status(200).build());
+                .thenReturn(Response.status(204).build());
         final var subscriber = keycloakService.deleteUserAccount(userProfile).subscribe()
                 .withSubscriber(UniAssertSubscriber.create());
 
