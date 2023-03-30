@@ -92,8 +92,9 @@ public class UserProfileServiceImplTest {
     @Test
     void createUserProfile_keycloakCreateUserAccountFailed() {
         // given
+        final var profileId = 10L;
         final var initialPassword = "password";
-        final var userProfile = new UserProfile();
+        final var userProfile = buildUserProfile();
         final var ex = new KeycloakIntegrationException("");
 
         // when
@@ -101,32 +102,10 @@ public class UserProfileServiceImplTest {
                 .thenReturn(Uni.createFrom().failure(ex));
         when(keycloakService.setUserPassword(userProfile, initialPassword))
                 .thenReturn(Uni.createFrom().voidItem());
-        final var subscriber = userProfileService.createUserProfile(userProfile, initialPassword).subscribe()
-                .withSubscriber(UniAssertSubscriber.create());
-
-        // then
-        final var failure = subscriber
-                .assertFailedWith(KeycloakIntegrationException.class)
-                .getFailure();
-        assertSame(ex, failure);
-
-        verify(keycloakService, times(1)).createUserAccount(userProfile);
-        verify(keycloakService, never()).setUserPassword(userProfile, initialPassword);
-        verify(userProfileDao, never()).insert(pool, userProfile);
-    }
-
-    @Test
-    void createUserProfile_keycloakSetUserPasswordFailed() {
-        // given
-        final var initialPassword = "password";
-        final var userProfile = new UserProfile();
-        final var ex = new KeycloakIntegrationException("");
-
-        // when
-        when(keycloakService.createUserAccount(userProfile))
+        when(billingService.deleteUserAccount(userProfile.getUserName()))
                 .thenReturn(Uni.createFrom().voidItem());
-        when(keycloakService.setUserPassword(userProfile, initialPassword))
-                .thenReturn(Uni.createFrom().failure(ex));
+        when(userProfileDao.insert(pool, userProfile))
+                .thenReturn(Uni.createFrom().item(profileId));
         final var subscriber = userProfileService.createUserProfile(userProfile, initialPassword).subscribe()
                 .withSubscriber(UniAssertSubscriber.create());
 
@@ -138,7 +117,48 @@ public class UserProfileServiceImplTest {
 
         verify(keycloakService, times(1)).createUserAccount(userProfile);
         verify(keycloakService, times(1)).setUserPassword(userProfile, initialPassword);
-        verify(userProfileDao, never()).insert(pool, userProfile);
+        verify(billingService, times(1)).createUserAccount(userProfile.getUserName());
+        verify(userProfileDao, times(1)).insert(pool, userProfile);
+
+        verify(userProfileDao, times(1)).deleteById(pool, profileId);
+        verify(billingService, times(1)).deleteUserAccount(userProfile.getUserName());
+        verify(keycloakService, times(1)).deleteUserAccount(userProfile);
+    }
+
+    @Test
+    void createUserProfile_keycloakSetUserPasswordFailed() {
+        // given
+        final var profileId = 10L;
+        final var initialPassword = "password";
+        final var userProfile = buildUserProfile();
+        final var ex = new KeycloakIntegrationException("");
+
+        // when
+        when(keycloakService.createUserAccount(userProfile))
+                .thenReturn(Uni.createFrom().voidItem());
+        when(keycloakService.setUserPassword(userProfile, initialPassword))
+                .thenReturn(Uni.createFrom().failure(ex));
+        when(billingService.deleteUserAccount(userProfile.getUserName()))
+                .thenReturn(Uni.createFrom().voidItem());
+        when(userProfileDao.insert(pool, userProfile))
+                .thenReturn(Uni.createFrom().item(profileId));
+        final var subscriber = userProfileService.createUserProfile(userProfile, initialPassword).subscribe()
+                .withSubscriber(UniAssertSubscriber.create());
+
+        // then
+        final var failure = subscriber
+                .assertFailedWith(KeycloakIntegrationException.class)
+                .getFailure();
+        assertSame(ex, failure);
+
+        verify(keycloakService, times(1)).createUserAccount(userProfile);
+        verify(keycloakService, times(1)).setUserPassword(userProfile, initialPassword);
+        verify(billingService, times(1)).createUserAccount(userProfile.getUserName());
+        verify(userProfileDao, times(1)).insert(pool, userProfile);
+
+        verify(userProfileDao, times(1)).deleteById(pool, profileId);
+        verify(billingService, times(1)).deleteUserAccount(userProfile.getUserName());
+        verify(keycloakService, times(1)).deleteUserAccount(userProfile);
     }
 
     @Test
@@ -258,6 +278,7 @@ public class UserProfileServiceImplTest {
     private static UserProfile buildUserProfile() {
         final var userProfile = new UserProfile();
         userProfile.setId(1L);
+        userProfile.setUserName(USERNAME);
         return userProfile;
     }
 }

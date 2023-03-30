@@ -7,7 +7,7 @@ import io.smallrye.mutiny.Uni;
 public interface Story {
 
     UUID getId();
-    
+
     Uni<Void> execute();
 
     Uni<Void> compensate();

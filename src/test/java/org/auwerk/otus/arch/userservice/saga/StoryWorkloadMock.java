@@ -32,7 +32,7 @@ public class StoryWorkloadMock {
         return shouldFailWith.isPresent();
     }
 
-    public Uni<Void> execute() {
+    public Uni<Void> execute(SagaContext context) {
         return Uni.createFrom().emitter(emitter -> {
             executed = true;
             shouldFailWith.ifPresentOrElse(
@@ -41,7 +41,7 @@ public class StoryWorkloadMock {
         }).replaceWithVoid();
     }
 
-    public Uni<Void> compensate() {
+    public Uni<Void> compensate(SagaContext context) {
         return Uni.createFrom().emitter(emitter -> {
             compensated = true;
             emitter.complete(null);

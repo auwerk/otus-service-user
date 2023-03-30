@@ -36,7 +36,8 @@ public class SagaTest {
                 new StoryWorkloadMock());
 
         // when
-        stories.forEach(story -> saga.addStory(() -> story.execute(), () -> story.compensate()));
+        stories.forEach(story -> saga.addStory(context -> story.execute(context),
+                context -> story.compensate(context)));
         final var subscriber = saga.execute().subscribe()
                 .withSubscriber(UniAssertSubscriber.create());
 
@@ -55,7 +56,8 @@ public class SagaTest {
                 new StoryWorkloadMock(), new StoryWorkloadMock());
 
         // when
-        stories.forEach(story -> story.setStoryId(saga.addStory(() -> story.execute(), () -> story.compensate())));
+        stories.forEach(story -> story.setStoryId(saga.addStory(context -> story.execute(context),
+                context -> story.compensate(context))));
         final var subscriber = saga.execute().subscribe()
                 .withSubscriber(UniAssertSubscriber.create());
 

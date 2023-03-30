@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import org.auwerk.otus.arch.userservice.saga.ExecutionEventType;
 import org.auwerk.otus.arch.userservice.saga.ExecutionLog;
+import org.auwerk.otus.arch.userservice.saga.SagaContext;
 import org.auwerk.otus.arch.userservice.saga.StoryWorkloadMock;
 import org.junit.jupiter.api.Test;
 
@@ -19,11 +20,13 @@ import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 public class StoryImplTest {
 
     private final ExecutionLog executionLog = mock(ExecutionLog.class);
+    private final SagaContext context = new SagaContext();
 
     @Test
     void executeCompletingStory() {
         final var workload = new StoryWorkloadMock();
-        final var story = new StoryImpl(executionLog, () -> workload.execute(), () -> workload.compensate());
+        final var story = new StoryImpl(executionLog, () -> workload.execute(context),
+                () -> workload.compensate(context));
 
         final var subscriber = story.execute().subscribe().withSubscriber(UniAssertSubscriber.create());
 
@@ -42,7 +45,8 @@ public class StoryImplTest {
     void executeFailingStory() {
         final var failure = new RuntimeException();
         final var workload = new StoryWorkloadMock(failure);
-        final var story = new StoryImpl(executionLog, () -> workload.execute(), () -> workload.compensate());
+        final var story = new StoryImpl(executionLog, () -> workload.execute(context),
+                () -> workload.compensate(context));
 
         final var subscriber = story.execute().subscribe().withSubscriber(UniAssertSubscriber.create());
 
@@ -60,7 +64,8 @@ public class StoryImplTest {
     @Test
     void compensateStory() {
         final var workload = new StoryWorkloadMock();
-        final var story = new StoryImpl(executionLog, () -> workload.execute(), () -> workload.compensate());
+        final var story = new StoryImpl(executionLog, () -> workload.execute(context),
+                () -> workload.compensate(context));
 
         final var subscriber = story.compensate().subscribe().withSubscriber(UniAssertSubscriber.create());
 

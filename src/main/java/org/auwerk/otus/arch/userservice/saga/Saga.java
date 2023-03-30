@@ -3,7 +3,7 @@ package org.auwerk.otus.arch.userservice.saga;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import org.auwerk.otus.arch.userservice.saga.impl.ExecutionLogImpl;
 import org.auwerk.otus.arch.userservice.saga.impl.StoryImpl;
@@ -14,19 +14,21 @@ public class Saga {
 
     private final ExecutionLog log = new ExecutionLogImpl();
     private final List<Story> stories = new ArrayList<>();
+    private final SagaContext context = new SagaContext();
 
-    public UUID addStory(Supplier<Uni<Void>> workload, Supplier<Uni<Void>> compensation) {
-        final var story = new StoryImpl(log, workload, compensation);
+    public UUID addStory(Function<SagaContext, Uni<Void>> workload, Function<SagaContext, Uni<Void>> compensation) {
+        final var story = new StoryImpl(log, () -> workload.apply(context), () -> compensation.apply(context));
         stories.add(story);
         return story.getId();
     }
 
-    public Uni<Void> execute() {
+    public Uni<SagaContext> execute() {
         return executeAll()
+                .replaceWith(context)
                 .onFailure()
                 .recoverWithUni(compensateAllComplete().invoke(() -> {
                     throw new SagaException(log.mapFailures());
-                }));
+                }).replaceWith(context));
     }
 
     private Uni<Void> executeAll() {

@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.auwerk.otus.arch.userservice.dao.UserProfileDao;
 import org.auwerk.otus.arch.userservice.domain.UserProfile;
 import org.auwerk.otus.arch.userservice.exception.UserProfileNotFoundException;
+import org.auwerk.otus.arch.userservice.saga.Saga;
+import org.auwerk.otus.arch.userservice.saga.SagaException;
 import org.auwerk.otus.arch.userservice.service.BillingService;
 import org.auwerk.otus.arch.userservice.service.KeycloakService;
 import org.auwerk.otus.arch.userservice.service.UserProfileService;
@@ -28,10 +30,29 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Override
     public Uni<Long> createUserProfile(UserProfile profile, String initialPassword) {
-        return keycloakService.createUserAccount(profile)
-                .chain(() -> keycloakService.setUserPassword(profile, initialPassword))
-                .chain(() -> billingService.createUserAccount(profile.getUserName()))
-                .chain(() -> userProfileDao.insert(pool, profile));
+        final var saga = new Saga();
+        saga.addStory(
+                context -> keycloakService.createUserAccount(profile),
+                context -> keycloakService.deleteUserAccount(profile));
+        saga.addStory(
+                context -> keycloakService.setUserPassword(profile, initialPassword),
+                context -> keycloakService.deleteUserAccount(profile));
+        saga.addStory(
+                context -> billingService.createUserAccount(profile.getUserName())
+                        .replaceWithVoid(),
+                context -> billingService.deleteUserAccount(profile.getUserName()));
+        saga.addStory(
+                context -> userProfileDao.insert(pool, profile).invoke(profileId -> {
+                    context.getValues().put("profileId", profileId);
+                }).replaceWithVoid(),
+                context -> userProfileDao.deleteById(pool, context.getValue("profileId")));
+        return saga.execute()
+                .onFailure(SagaException.class)
+                .transform(ex -> {
+                    final var sagaEx = (SagaException) ex;
+                    return sagaEx.getFailureMap().values().stream().findFirst().get();
+                })
+                .map(context -> context.getValue("profileId"));
     }
 
     @Override
