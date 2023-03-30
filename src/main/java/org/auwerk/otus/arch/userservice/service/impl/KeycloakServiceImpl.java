@@ -37,20 +37,24 @@ public class KeycloakServiceImpl implements KeycloakService {
     public Uni<Void> createUserAccount(UserProfile profile) {
         return vertx.getOrCreateContext().executeBlocking(
                 Uni.createFrom().emitter(emitter -> {
-                    final var userRepresentation = new UserRepresentation();
-                    userRepresentation.setEnabled(true);
-                    userRepresentation.setEmailVerified(true);
+                    try {
+                        final var userRepresentation = new UserRepresentation();
+                        userRepresentation.setEnabled(true);
+                        userRepresentation.setEmailVerified(true);
 
-                    userProfileMapper.updateUserRepresentationFromProfile(profile, userRepresentation);
+                        userProfileMapper.updateUserRepresentationFromProfile(profile, userRepresentation);
 
-                    final var response = keycloak.realm(keycloakRealm).users()
-                            .create(userRepresentation);
-                    if (response.getStatus() != 201) {
-                        emitter.fail(new KeycloakIntegrationException(
-                                "user account creation failed, status=" + response.getStatus()));
+                        final var response = keycloak.realm(keycloakRealm).users()
+                                .create(userRepresentation);
+                        if (response.getStatus() != 201) {
+                            throw new KeycloakIntegrationException(
+                                    "user account creation failed, status=" + response.getStatus());
+                        }
+
+                        emitter.complete(response);
+                    } catch (Throwable t) {
+                        emitter.fail(t);
                     }
-
-                    emitter.complete(response);
                 }).replaceWithVoid());
     }
 
@@ -63,11 +67,11 @@ public class KeycloakServiceImpl implements KeycloakService {
                         .orElseThrow(() -> new KeycloakIntegrationException("user account not found"));
 
                 realm.users().get(userId).logout();
-                
+
                 final var response = realm.users().delete(userId);
                 if (response.getStatus() != 200) {
-                    emitter.fail(new KeycloakIntegrationException(
-                            "user account deletion failed, status=" + response.getStatus()));
+                    throw new KeycloakIntegrationException(
+                            "user account deletion failed, status=" + response.getStatus());
                 }
 
                 emitter.complete(response);

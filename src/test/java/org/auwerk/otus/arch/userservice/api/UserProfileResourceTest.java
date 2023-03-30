@@ -56,7 +56,7 @@ public class UserProfileResourceTest {
     }
 
     @Test
-    void getMyProfile_userNotFound() {
+    void getMyProfile_userProfileNotFound() {
         // when
         Mockito.when(userService.getMyProfile())
                 .thenReturn(Uni.createFrom().failure(new UserProfileNotFoundException("user")));
@@ -109,6 +109,26 @@ public class UserProfileResourceTest {
     }
 
     @Test
+    void updateMyProfile_userProfileNotFound() {
+        // given
+        final var userName = "user";
+        final var request = buildUpdateProfileRequest();
+
+        // when
+        Mockito.when(userService.updateMyProfile(any(UserProfile.class)))
+                .thenReturn(Uni.createFrom().failure(new UserProfileNotFoundException(userName)));
+        // then
+        RestAssured.given()
+                .auth().oauth2(getAccessToken())
+                .contentType(ContentType.JSON)
+                .body(request)
+                .put()
+                .then()
+                .statusCode(404)
+                .body(Matchers.is("user profile not found, userName=" + userName));
+    }
+
+    @Test
     void updateMyProfile_serverError() {
         // given
         final var request = buildUpdateProfileRequest();
@@ -125,6 +145,56 @@ public class UserProfileResourceTest {
                 .put()
                 .then()
                 .statusCode(500);
+    }
+
+    @Test
+    void deleteMyProfile_success() {
+        // when
+        Mockito.when(userService.deleteMyProfile())
+                .thenReturn(Uni.createFrom().voidItem());
+
+        // then
+        RestAssured.given()
+                .auth().oauth2(getAccessToken())
+                .delete()
+                .then()
+                .statusCode(200);
+    }
+
+    @Test
+    void deleteMyProfile_userProfileNotFound() {
+        // given
+        final var userName = "user";
+
+        // when
+        Mockito.when(userService.deleteMyProfile())
+                .thenReturn(Uni.createFrom().failure(new UserProfileNotFoundException(userName)));
+
+        // then
+        RestAssured.given()
+                .auth().oauth2(getAccessToken())
+                .delete()
+                .then()
+                .statusCode(404)
+                .body(Matchers.is("user profile not found, userName=" + userName));
+    }
+
+    @Test
+    void deleteMyProfile_serverError() {
+        // given
+        final var errorMessage = "test error";
+
+        // when
+        Mockito.when(userService.deleteMyProfile())
+                .thenReturn(Uni.createFrom().failure(new RuntimeException(errorMessage)));
+
+        // then
+        RestAssured.given()
+                .auth().oauth2(getAccessToken())
+                .delete()
+                .then()
+                .statusCode(500)
+                .body(Matchers.is(errorMessage));
     }
 
     private UserProfile buildUserProfile() {

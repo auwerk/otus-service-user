@@ -2,9 +2,11 @@ package org.auwerk.otus.arch.userservice.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -12,6 +14,7 @@ import static org.mockito.Mockito.when;
 import java.security.Principal;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.function.Function;
 
 import org.auwerk.otus.arch.userservice.dao.UserProfileDao;
 import org.auwerk.otus.arch.userservice.domain.UserProfile;
@@ -27,6 +30,7 @@ import io.quarkus.security.identity.SecurityIdentity;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import io.vertx.mutiny.pgclient.PgPool;
+import io.vertx.mutiny.sqlclient.SqlConnection;
 
 public class UserProfileServiceImplTest {
 
@@ -40,6 +44,15 @@ public class UserProfileServiceImplTest {
     private final BillingService billingService = mock(BillingService.class);
     private final UserProfileService userProfileService = new UserProfileServiceImpl(pool, securityIdentity,
             userProfileDao, keycloakService, billingService);
+
+    @BeforeEach
+    void mockTransaction() {
+        when(pool.withTransaction(any()))
+        .then(inv -> {
+            final Function<SqlConnection, Uni<UserProfile>> f = inv.getArgument(0);
+            return f.apply(null);
+        });
+    }
 
     @BeforeEach
     void mockSecurityIdentity() {
@@ -161,18 +174,89 @@ public class UserProfileServiceImplTest {
     @Test
     void updateMyProfile_success() {
         // given
-        final var userProfile = new UserProfile();
+        final var userProfile = buildUserProfile();
+        final var userProfileUpdate = new UserProfile();
 
         // when
-        when(userProfileDao.updateByUserName(pool, USERNAME, userProfile))
+        when(userProfileDao.findByUserName(pool, USERNAME))
+                .thenReturn(Uni.createFrom().item(userProfile));
+        when(userProfileDao.updateById(pool, userProfile.getId(), userProfile))
                 .thenReturn(Uni.createFrom().voidItem());
-        final var subscriber = userProfileService.updateMyProfile(userProfile).subscribe()
+        final var subscriber = userProfileService.updateMyProfile(userProfileUpdate).subscribe()
                 .withSubscriber(UniAssertSubscriber.create());
 
         // then
         subscriber.assertCompleted();
 
-        verify(userProfileDao, only())
-                .updateByUserName(pool, USERNAME, userProfile);
+        verify(userProfileDao, times(1))
+                .updateById(pool, userProfile.getId(), userProfileUpdate);
+    }
+
+    @Test
+    void updateMyProfile_userProfileNotFound() {
+        // given
+        final var userProfileUpdate = buildUserProfile();
+
+        // when
+        userProfileUpdate.setUserName(USERNAME);
+        when(userProfileDao.findByUserName(pool, USERNAME))
+                .thenReturn(Uni.createFrom().failure(new NoSuchElementException()));
+        final var subscriber = userProfileService.updateMyProfile(userProfileUpdate).subscribe()
+                .withSubscriber(UniAssertSubscriber.create());
+
+        // then
+        final var failure = (UserProfileNotFoundException) subscriber
+                .assertFailedWith(UserProfileNotFoundException.class)
+                .getFailure();
+        assertEquals(USERNAME, failure.getUserName());
+
+        verify(userProfileDao, never())
+                .updateById(same(pool), anyLong(), same(userProfileUpdate));
+    }
+
+    @Test
+    void deleteMyProfile_success() {
+        // given
+        final var userProfile = buildUserProfile();
+
+        // when
+        when(userProfileDao.findByUserName(pool, USERNAME))
+                .thenReturn(Uni.createFrom().item(userProfile));
+        when(userProfileDao.deleteById(pool, userProfile.getId()))
+                .thenReturn(Uni.createFrom().voidItem());
+        when(keycloakService.deleteUserAccount(userProfile))
+                .thenReturn(Uni.createFrom().voidItem());
+        final var subscriber = userProfileService.deleteMyProfile().subscribe()
+                .withSubscriber(UniAssertSubscriber.create());
+
+        // then
+        subscriber.assertCompleted();
+
+        verify(keycloakService, times(1)).deleteUserAccount(userProfile);
+        verify(userProfileDao, times(1)).deleteById(pool, userProfile.getId());
+    }
+
+    @Test
+    void deleteMyProfile_userProfileNotFound() {
+        // when
+        when(userProfileDao.findByUserName(pool, USERNAME))
+                .thenReturn(Uni.createFrom().failure(new NoSuchElementException()));
+        final var subscriber = userProfileService.deleteMyProfile().subscribe()
+                .withSubscriber(UniAssertSubscriber.create());
+
+        // then
+        final var failure = (UserProfileNotFoundException) subscriber
+                .assertFailedWith(UserProfileNotFoundException.class)
+                .getFailure();
+        assertEquals(USERNAME, failure.getUserName());
+
+        verify(userProfileDao, never())
+                .deleteById(same(pool), anyLong());
+    }
+
+    private static UserProfile buildUserProfile() {
+        final var userProfile = new UserProfile();
+        userProfile.setId(1L);
+        return userProfile;
     }
 }

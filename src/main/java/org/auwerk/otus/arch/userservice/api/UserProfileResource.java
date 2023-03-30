@@ -29,7 +29,7 @@ public class UserProfileResource {
         return userService.getMyProfile()
                 .map(profile -> Response.ok(userProfileMapper.toMyProfileDto(profile)).build())
                 .onFailure(UserProfileNotFoundException.class)
-                .recoverWithItem(Response.status(Status.NOT_FOUND).build())
+                .recoverWithItem(failure -> Response.status(Status.NOT_FOUND).entity(failure.getMessage()).build())
                 .onFailure()
                 .recoverWithItem(failure -> Response.serverError().entity(failure.getMessage()).build());
     }
@@ -38,6 +38,8 @@ public class UserProfileResource {
     public Uni<Response> updateMyProfile(UpdateUserProfileRequestDto requestDto) {
         return userService.updateMyProfile(userProfileMapper.fromUpdateUserProfileRequestDto(requestDto))
                 .replaceWith(Response.ok().build())
+                .onFailure(UserProfileNotFoundException.class)
+                .recoverWithItem(failure -> Response.status(Status.NOT_FOUND).entity(failure.getMessage()).build())
                 .onFailure()
                 .recoverWithItem(failure -> Response.serverError().entity(failure.getMessage()).build());
     }
@@ -46,6 +48,8 @@ public class UserProfileResource {
     public Uni<Response> deleteMyProfile() {
         return userService.deleteMyProfile()
                 .replaceWith(Response.ok().build())
+                .onFailure(UserProfileNotFoundException.class)
+                .recoverWithItem(failure -> Response.status(Status.NOT_FOUND).entity(failure.getMessage()).build())
                 .onFailure()
                 .recoverWithItem(failure -> Response.serverError().entity(failure.getMessage()).build());
     }

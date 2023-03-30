@@ -43,14 +43,19 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Override
     public Uni<Void> updateMyProfile(UserProfile profile) {
-        return userProfileDao.updateByUserName(pool, getUserName(), profile);
+        return pool.withTransaction(conn -> userProfileDao.findByUserName(pool, getUserName())
+                .flatMap(p -> userProfileDao.updateById(pool, p.getId(), profile)))
+                .onFailure(NoSuchElementException.class)
+                .transform(f -> new UserProfileNotFoundException(getUserName()));
     }
 
     @Override
     public Uni<Void> deleteMyProfile() {
         return userProfileDao.findByUserName(pool, getUserName())
                 .flatMap(userProfile -> Uni.combine().all().unis(keycloakService.deleteUserAccount(userProfile),
-                        userProfileDao.deleteById(pool, userProfile.getId())).discardItems());
+                        userProfileDao.deleteById(pool, userProfile.getId())).discardItems())
+                .onFailure(NoSuchElementException.class)
+                .transform(f -> new UserProfileNotFoundException(getUserName()));
     }
 
     private String getUserName() {

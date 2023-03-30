@@ -11,7 +11,7 @@ public interface UserProfileDao {
 
     Uni<UserProfile> findByUserName(PgPool pool, String userName);
 
-    Uni<Void> updateByUserName(PgPool pool, String userName, UserProfile profile);
+    Uni<Void> updateById(PgPool pool, Long id, UserProfile profile);
 
     Uni<Void> deleteById(PgPool pool, Long id);
 }
