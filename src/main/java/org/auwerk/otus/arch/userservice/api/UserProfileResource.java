@@ -2,56 +2,55 @@ package org.auwerk.otus.arch.userservice.api;
 
 import io.quarkus.security.Authenticated;
 import io.smallrye.mutiny.Uni;
-import org.auwerk.otus.arch.userservice.api.dto.MyProfileDto;
-import org.auwerk.otus.arch.userservice.api.dto.UpdateUserProfileRequestDto;
-import org.auwerk.otus.arch.userservice.dao.UserProfileDao;
-import org.auwerk.otus.arch.userservice.mapper.UserProfileMapper;
-import org.auwerk.otus.arch.userservice.service.UserService;
-import org.jboss.resteasy.reactive.NoCache;
-import org.jboss.resteasy.reactive.RestPath;
+import lombok.RequiredArgsConstructor;
 
-import javax.inject.Inject;
+import org.auwerk.otus.arch.userservice.api.dto.UpdateUserProfileRequestDto;
+import org.auwerk.otus.arch.userservice.exception.UserProfileNotFoundException;
+import org.auwerk.otus.arch.userservice.mapper.UserProfileMapper;
+import org.auwerk.otus.arch.userservice.service.UserProfileService;
+
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 @Path("/profile")
+@Authenticated
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
+@RequiredArgsConstructor
 public class UserProfileResource {
 
-    @Inject
-    UserProfileDao userProfileDao;
-
-    @Inject
-    UserService userService;
-
-    @Inject
-    UserProfileMapper userProfileMapper;
+    private final UserProfileService userService;
+    private final UserProfileMapper userProfileMapper;
 
     @GET
-    @Authenticated
-    @NoCache
-    public Uni<Response> myProfile() {
+    public Uni<Response> getMyProfile() {
         return userService.getMyProfile()
-                .onItem().transform(profile ->
-                        Response.ok(userProfileMapper.toMyProfileDto(profile)).build());
+                .map(profile -> Response.ok(userProfileMapper.toMyProfileDto(profile)).build())
+                .onFailure(UserProfileNotFoundException.class)
+                .recoverWithItem(failure -> Response.status(Status.NOT_FOUND).entity(failure.getMessage()).build())
+                .onFailure()
+                .recoverWithItem(failure -> Response.serverError().entity(failure.getMessage()).build());
     }
 
     @PUT
-    @Authenticated
     public Uni<Response> updateMyProfile(UpdateUserProfileRequestDto requestDto) {
         return userService.updateMyProfile(userProfileMapper.fromUpdateUserProfileRequestDto(requestDto))
-                .onItem().transform(rowsUpdated -> rowsUpdated == 1
-                        ? Response.ok().build() : Response.serverError().build());
+                .replaceWith(Response.ok().build())
+                .onFailure(UserProfileNotFoundException.class)
+                .recoverWithItem(failure -> Response.status(Status.NOT_FOUND).entity(failure.getMessage()).build())
+                .onFailure()
+                .recoverWithItem(failure -> Response.serverError().entity(failure.getMessage()).build());
     }
 
-    @GET
-    @Path("/{id:\\d+}")
-    public Uni<Response> userProfile(@RestPath Long id) {
-        return userProfileDao.findById(id)
-                .onFailure().transform(throwable -> new WebApplicationException(Response.Status.NOT_FOUND))
-                .onItem().transform(profile ->
-                        Response.ok(userProfileMapper.toPublicProfileResponseDto(profile)).build());
+    @DELETE
+    public Uni<Response> deleteMyProfile() {
+        return userService.deleteMyProfile()
+                .replaceWith(Response.ok().build())
+                .onFailure(UserProfileNotFoundException.class)
+                .recoverWithItem(failure -> Response.status(Status.NOT_FOUND).entity(failure.getMessage()).build())
+                .onFailure()
+                .recoverWithItem(failure -> Response.serverError().entity(failure.getMessage()).build());
     }
 }

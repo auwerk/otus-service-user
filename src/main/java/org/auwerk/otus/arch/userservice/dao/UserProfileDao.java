@@ -1,14 +1,17 @@
 package org.auwerk.otus.arch.userservice.dao;
 
 import io.smallrye.mutiny.Uni;
+import io.vertx.mutiny.pgclient.PgPool;
+
 import org.auwerk.otus.arch.userservice.domain.UserProfile;
 
 public interface UserProfileDao {
-    Uni<Long> insert(UserProfile profile);
 
-    Uni<UserProfile> findById(Long id);
+    Uni<Long> insert(PgPool pool, UserProfile profile);
 
-    Uni<UserProfile> findByUserName(String userName);
+    Uni<UserProfile> findByUserName(PgPool pool, String userName);
 
-    Uni<Integer> updateByUserName(String userName, UserProfile profile);
+    Uni<Void> updateById(PgPool pool, Long id, UserProfile profile);
+
+    Uni<Void> deleteById(PgPool pool, Long id);
 }
