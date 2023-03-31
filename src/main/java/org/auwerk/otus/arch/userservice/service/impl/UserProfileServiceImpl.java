@@ -5,11 +5,12 @@ import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.pgclient.PgPool;
 import lombok.RequiredArgsConstructor;
 
+import org.auwerk.arch.reactivesaga.Saga;
+import org.auwerk.arch.reactivesaga.exception.SagaException;
+import org.auwerk.arch.reactivesaga.log.InMemoryExecutionLog;
 import org.auwerk.otus.arch.userservice.dao.UserProfileDao;
 import org.auwerk.otus.arch.userservice.domain.UserProfile;
 import org.auwerk.otus.arch.userservice.exception.UserProfileNotFoundException;
-import org.auwerk.otus.arch.userservice.saga.Saga;
-import org.auwerk.otus.arch.userservice.saga.SagaException;
 import org.auwerk.otus.arch.userservice.service.BillingService;
 import org.auwerk.otus.arch.userservice.service.KeycloakService;
 import org.auwerk.otus.arch.userservice.service.UserProfileService;
@@ -30,7 +31,8 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Override
     public Uni<Long> createUserProfile(UserProfile profile, String initialPassword) {
-        final var saga = new Saga();
+        final var sagaExecutionLog = new InMemoryExecutionLog();
+        final var saga = new Saga(sagaExecutionLog);
         saga.addStory(
                 context -> keycloakService.createUserAccount(profile),
                 context -> keycloakService.deleteUserAccount(profile));
@@ -49,8 +51,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         return saga.execute()
                 .onFailure(SagaException.class)
                 .transform(ex -> {
-                    final var sagaEx = (SagaException) ex;
-                    return sagaEx.getFailureMap().values().stream().findFirst().get();
+                    return sagaExecutionLog.getAllFailures().get(0);
                 })
                 .map(context -> context.getValue("profileId"));
     }
